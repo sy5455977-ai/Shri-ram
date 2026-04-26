@@ -1,0 +1,8 @@
+{
+  "name": "Remix: NEXUS AI 3.0 - Phone Control Edition",
+  "description": "Advanced multi-modal intelligent assistant with full Android-style phone control via voice, camera vision, and smart automation.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

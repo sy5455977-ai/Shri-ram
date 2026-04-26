@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: conversations
+    // Fields:
+    //   - title: string (required, < 100 chars)
+    //   - userId: string (required, matches auth.uid)
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (required)
+    //
+    // Sub-collection: messages
+    // Fields:
+    //   - conversationId: string (required)
+    //   - role: string (required, enum: ['user', 'assistant'])
+    //   - content: string (required, < 10000 chars)
+    //   - image: string (optional, base64)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == "sy5455977@gmail.com" && 
+        request.auth.token.email_verified == true
+      );
+    }
+
+    function isValidConversation(data) {
+      return data.keys().hasAll(['title', 'userId', 'createdAt', 'updatedAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+             data.userId == request.auth.uid &&
+             (!('isPublic' in data) || data.isPublic is bool);
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['conversationId', 'role', 'content', 'createdAt']) &&
+             data.role in ['user', 'assistant'] &&
+             data.content is string && data.content.size() <= 10000 &&
+             (!('image' in data) || data.image == null || (data.image is string && data.image.size() < 1000000));
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId || 
+        ('isPublic' in resource.data && resource.data.isPublic == true) ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && isValidConversation(request.resource.data);
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == resource.data.userId && isValidConversation(request.resource.data)) ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && (
+          request.auth.uid == get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId || 
+          ('isPublic' in get(/databases/$(database)/documents/conversations/$(conversationId)).data && get(/databases/$(database)/documents/conversations/$(conversationId)).data.isPublic == true) ||
+          isAdmin()
+        );
+        allow create: if isAuthenticated() && (
+          request.auth.uid == get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId ||
+          isAdmin()
+        ) && isValidMessage(request.resource.data);
+        allow update: if false; // Messages are immutable
+        allow delete: if isAuthenticated() && (
+          request.auth.uid == get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId ||
+          isAdmin()
+        );
+      }
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}

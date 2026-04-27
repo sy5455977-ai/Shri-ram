@@ -201,6 +201,7 @@ export default function VisionMode() {
                 <button 
                   onClick={reset}
                   className="p-3 bg-nexus-bg/80 backdrop-blur-md rounded-xl text-white hover:bg-nexus-bg transition-colors"
+                  aria-label="Reset camera"
                 >
                   <RefreshCw className="w-6 h-6" />
                 </button>

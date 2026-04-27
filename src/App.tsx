@@ -93,18 +93,16 @@ const ConversationItem = React.memo(({
   activeConversationId, 
   setActiveConversationId, 
   setMode, 
-  deleteConversation 
+  onDeleteClick
 }: { 
   conv: Conversation, 
   activeConversationId: string | null, 
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
-  deleteConversation: (e: React.MouseEvent, id: string) => void
+  onDeleteClick: (e: React.MouseEvent, conv: Conversation) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    onDeleteClick({ stopPropagation: () => {} } as any, conv);
   });
 
   return (
@@ -130,8 +128,9 @@ const ConversationItem = React.memo(({
       <MessageSquare className="w-4 h-4 shrink-0" />
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
-        onClick={(e) => deleteConversation(e, conv.id)}
+        onClick={(e) => onDeleteClick(e, conv)}
         className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        aria-label="Delete Conversation"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -157,6 +156,8 @@ function AppContent() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
+  const [showSingleDeleteModal, setShowSingleDeleteModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
@@ -377,15 +378,24 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, conversation: Conversation) => {
     e.stopPropagation();
+    setConversationToDelete(conversation);
+    setShowSingleDeleteModal(true);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) return;
     try {
-      await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
+      await deleteDoc(doc(db, 'conversations', conversationToDelete.id));
+      if (activeConversationId === conversationToDelete.id) {
         setActiveConversationId(null);
       }
+      setShowSingleDeleteModal(false);
+      setConversationToDelete(null);
     } catch (error) {
       console.error("Error deleting chat:", error);
+      setShowSingleDeleteModal(false);
     }
   };
 
@@ -428,6 +438,19 @@ function AppContent() {
         type="danger"
       />
 
+      <Modal
+        isOpen={showSingleDeleteModal}
+        onClose={() => {
+          setShowSingleDeleteModal(false);
+          setConversationToDelete(null);
+        }}
+        onConfirm={confirmDeleteConversation}
+        title="Delete Conversation"
+        message={`Delete "${conversationToDelete?.title}"? NEXUS will lose this memory forever.`}
+        confirmText="Delete"
+        type="danger"
+      />
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -444,7 +467,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+            aria-label="Close Sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -481,6 +508,7 @@ function AppContent() {
               <button 
                 onClick={clearAllHistory}
                 className="text-[10px] font-bold text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors"
+                aria-label="Clear All Conversations"
               >
                 Clear All
               </button>
@@ -493,7 +521,7 @@ function AppContent() {
               activeConversationId={activeConversationId}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
-              deleteConversation={deleteConversation}
+              onDeleteClick={handleDeleteClick}
             />
           ))}
 
@@ -573,6 +601,7 @@ function AppContent() {
                     onClick={() => window.location.reload()}
                     className="p-1 hover:bg-white/10 rounded text-nexus-primary"
                     title="Refresh System"
+                    aria-label="Refresh System"
                   >
                     <RefreshCw className="w-3 h-3" />
                   </button>
@@ -595,7 +624,11 @@ function AppContent() {
                   <p className="text-[10px] text-nexus-muted truncate">{user.email}</p>
                 </div>
               </div>
-              <button onClick={logOut} className="p-2 text-nexus-muted hover:text-red-400 transition-colors">
+              <button
+                onClick={logOut}
+                className="p-2 text-nexus-muted hover:text-red-400 transition-colors"
+                aria-label="Log Out"
+              >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
@@ -619,7 +652,11 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+                  aria-label="Open Sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
@@ -664,11 +701,12 @@ function AppContent() {
           </div>
           
           <div className="flex items-center space-x-2 md:space-x-4">
-            {mode === 'chat' && activeConversationId && (
+            {mode === 'chat' && activeConversationId && conversations.find(c => c.id === activeConversationId) && (
               <button 
-                onClick={(e) => deleteConversation(e, activeConversationId)}
+                onClick={(e) => handleDeleteClick(e, conversations.find(c => c.id === activeConversationId)!)}
                 className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
                 title="Delete Current Chat"
+                aria-label="Delete Current Chat"
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:block text-[10px] font-bold uppercase tracking-widest">Delete Chat</span>
@@ -750,6 +788,7 @@ function AppContent() {
               onClick={stopVoice}
               className="p-1.5 hover:bg-red-500/20 rounded-full text-red-400 transition-colors"
               title="Stop Voice Session"
+                aria-label="Stop Voice Session"
             >
               <X className="w-3.5 h-3.5" />
             </button>

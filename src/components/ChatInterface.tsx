@@ -83,6 +83,7 @@ const MessageItem = React.memo(({
             <button 
               onClick={() => handleCopy(message.content, message.id)}
               className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+              aria-label={copiedId === message.id ? "Copied" : "Copy message"}
               title="Copy"
             >
               {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -91,6 +92,7 @@ const MessageItem = React.memo(({
               <button 
                 onClick={handleRegenerate}
                 className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+                aria-label="Regenerate response"
                 title="Regenerate"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -428,6 +430,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <button 
               onClick={() => setShowClearModal(true)}
               className="text-[10px] font-bold text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center space-x-1"
+              aria-label="Clear all messages in this conversation"
             >
               <Trash2 className="w-3 h-3" />
               <span>Clear Messages</span>
@@ -517,6 +520,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <button 
               onClick={() => fileInputRef.current?.click()}
               className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all"
+              aria-label="Attach Image"
               title="Attach Image"
             >
               <Paperclip className="w-5 h-5" />
@@ -527,6 +531,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
                 "p-3 rounded-xl transition-all flex items-center space-x-1",
                 deepReasoning ? "bg-nexus-primary/20 text-nexus-primary" : "text-nexus-muted hover:text-white"
               )}
+              aria-label="Deep Reasoning Mode"
               title="Deep Reasoning Mode"
             >
               <Brain className="w-5 h-5" />
@@ -556,6 +561,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
               (isLoading || (!input.trim() && !selectedImage && !!auth.currentUser)) && "opacity-50 cursor-not-allowed",
               !auth.currentUser && "flex items-center space-x-2 px-6"
             )}
+            aria-label={isLoading ? "NEXUS is thinking" : (!auth.currentUser ? "Sign In to Chat" : "Send Message")}
           >
             {isLoading ? (
               <Loader2 className="w-6 h-6 animate-spin" />

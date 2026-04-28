@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, X } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -24,6 +24,8 @@ export default function Modal({
   cancelText = "Cancel",
   type = 'info'
 }: ModalProps) {
+  const titleId = useId();
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -40,6 +42,9 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="relative w-full max-w-md bg-nexus-bg border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -52,11 +57,12 @@ export default function Modal({
                   )}>
                     <AlertTriangle className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">{title}</h3>
+                  <h3 id={titleId} className="text-xl font-bold text-white">{title}</h3>
                 </div>
                 <button 
                   onClick={onClose}
                   className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-colors"
+                  aria-label="Close modal"
                 >
                   <X className="w-5 h-5" />
                 </button>

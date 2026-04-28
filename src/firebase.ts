@@ -60,14 +60,14 @@ export enum OperationType {
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo = {
     error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
     operationType,
-    path
+    // Mask potential sensitive document IDs in path (usually 20+ chars)
+    path: path?.replace(/[a-zA-Z0-9-_]{20,}/g, '[ID]') || null
   };
+
+  // Log scrubbed info for debugging
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // Throw a generic error to avoid leaking details to the UI/user
+  throw new Error('NEXUS encountered a database error. Link stability compromised.');
 }

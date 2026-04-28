@@ -326,10 +326,10 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
               const app_name = (call.args as any).app_name;
               const appKey = app_name?.toLowerCase();
               if (appKey && appUrls[appKey]) {
-                window.open(appUrls[appKey], '_blank');
+                window.open(appUrls[appKey], '_blank', 'noopener,noreferrer');
                 responseText += `\n\n[Action: Opening ${app_name}]`;
               } else {
-                window.open(`https://www.google.com/search?q=${app_name}`, '_blank');
+                window.open(`https://www.google.com/search?q=${app_name}`, '_blank', 'noopener,noreferrer');
                 responseText += `\n\n[Action: Searching for ${app_name}]`;
               }
             } else if (call.name === 'make_call') {

@@ -85,7 +85,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     const data = audioQueueRef.current.shift()!;
     if (!audioContextRef.current) return;
     const buffer = audioContextRef.current.createBuffer(1, data.length, 24000);
-    buffer.getChannelData(0).set(Array.from(data).map(v => v / 32768));
+    buffer.getChannelData(0).set(Array.from(data).map(v => (v as any) / 32768));
     const source = audioContextRef.current.createBufferSource();
     source.buffer = buffer;
     source.connect(audioContextRef.current.destination);
@@ -139,7 +139,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
             if (msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data) {
               const binary = atob(msg.serverContent.modelTurn.parts[0].inlineData.data);
               const pcm = new Int16Array(binary.length / 2);
-              for (let i = 0; i < pcm.length; i++) pcm[i] = binary.charCodeAt(i*2) | (binary.charCodeAt(i*2+1) << 8);
+              for (let i = 0; i < pcm.length; i++) pcm[i] = (binary.charCodeAt(i*2) as any) | ((binary.charCodeAt(i*2+1) as any) << 8);
               audioQueueRef.current.push(pcm);
               playNext();
             }

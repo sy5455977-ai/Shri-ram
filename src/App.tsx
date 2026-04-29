@@ -13,9 +13,13 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  public state: { hasError: boolean, error: any };
+  public props: { children: React.ReactNode };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
+    this.props = props;
   }
 
   static getDerivedStateFromError(error: any) {
@@ -131,7 +135,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        aria-label="Delete conversation"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 focus:opacity-100 group-focus-within:opacity-100 p-1 hover:text-red-400 transition-all outline-none focus-visible:ring-2 ring-red-400/50 rounded-lg"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -444,7 +449,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close sidebar"
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -619,7 +628,11 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  aria-label="Open sidebar"
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
@@ -628,6 +641,7 @@ function AppContent() {
                     "p-2 rounded-xl transition-all flex items-center space-x-2",
                     performanceMode ? "bg-orange-500/20 text-orange-500" : "hover:bg-white/5 text-nexus-muted"
                   )}
+                  aria-label={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
                   title={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
                 >
                   <Zap className={cn("w-5 h-5", performanceMode && "fill-current")} />
@@ -702,6 +716,7 @@ function AppContent() {
                     "p-2 md:px-4 md:py-2 rounded-lg transition-all flex items-center space-x-2",
                     mode === item.id ? "bg-nexus-primary text-nexus-bg shadow-[0_0_15px_rgba(0,242,255,0.4)]" : "text-nexus-muted hover:text-white"
                   )}
+                  aria-label={item.label}
                   title={item.label}
                 >
                   <item.icon className="w-4 h-4" />

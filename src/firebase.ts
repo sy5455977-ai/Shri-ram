@@ -58,16 +58,23 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  // Mask document identifiers in paths to avoid exposing specific record IDs
+  const sanitizedPath = path ? path.replace(/[a-zA-Z0-9-_]{20,}/g, '[ID]') : null;
+
   const errInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      // Scrub PII (emails, UIDs) from logs
+      isAuthenticated: !!auth.currentUser,
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: sanitizedPath
   };
+
+  // Log sanitized info for debugging
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // Throw a generic error to the UI to prevent information disclosure through Error Boundaries
+  throw new Error('Database operation failed');
 }

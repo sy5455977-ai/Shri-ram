@@ -12,13 +12,20 @@ import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp,
 import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
 
-  static getDerivedStateFromError(error: any) {
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+  declare props: ErrorBoundaryProps;
+
+  static getDerivedStateFromError(error: any): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
@@ -131,7 +138,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary rounded-lg"
+        aria-label="Delete conversation"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -444,7 +452,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -466,6 +478,7 @@ function AppContent() {
             <input 
               type="text" 
               placeholder="Search chats..." 
+              aria-label="Search conversations"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
@@ -512,7 +525,8 @@ function AppContent() {
                   </div>
                   <button 
                     onClick={() => deleteReminder(idx)}
-                    className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                    className="absolute right-2 opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-nexus-secondary rounded-lg"
+                    aria-label="Delete reminder"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -526,6 +540,9 @@ function AppContent() {
         <div className="p-4 border-t border-white/10 shrink-0 space-y-3">
           <button 
             onClick={() => setPerformanceMode(!performanceMode)}
+            role="switch"
+            aria-checked={performanceMode}
+            aria-label="Toggle Performance Mode"
             className={cn(
               "w-full flex items-center justify-between p-3 rounded-xl transition-all",
               performanceMode ? "bg-nexus-primary/10 text-nexus-primary" : "text-nexus-muted hover:bg-white/5"
@@ -619,11 +636,18 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
                   onClick={() => setPerformanceMode(!performanceMode)}
+                  role="switch"
+                  aria-checked={performanceMode}
+                  aria-label="Toggle Performance Mode"
                   className={cn(
                     "p-2 rounded-xl transition-all flex items-center space-x-2",
                     performanceMode ? "bg-orange-500/20 text-orange-500" : "hover:bg-white/5 text-nexus-muted"
@@ -669,6 +693,7 @@ function AppContent() {
                 onClick={(e) => deleteConversation(e, activeConversationId)}
                 className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
                 title="Delete Current Chat"
+                aria-label="Delete current conversation"
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:block text-[10px] font-bold uppercase tracking-widest">Delete Chat</span>
@@ -750,6 +775,7 @@ function AppContent() {
               onClick={stopVoice}
               className="p-1.5 hover:bg-red-500/20 rounded-full text-red-400 transition-colors"
               title="Stop Voice Session"
+              aria-label="Stop voice session"
             >
               <X className="w-3.5 h-3.5" />
             </button>

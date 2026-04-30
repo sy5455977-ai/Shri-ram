@@ -13,8 +13,12 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  public state: { hasError: boolean, error: any };
+  public props: { children: React.ReactNode };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
+    this.props = props;
     this.state = { hasError: false, error: null };
   }
 

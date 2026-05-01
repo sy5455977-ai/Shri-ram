@@ -58,16 +58,23 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
+  // Security: Mask sensitive document identifiers (20+ chars) and PII
+  const sanitize = (str: string) => str.replace(/[a-zA-Z0-9-_]{20,}/g, '[ID]').replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL]');
+
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const sanitizedPath = path ? sanitize(path) : null;
+  const sanitizedError = sanitize(errorMessage);
+
+  const logInfo = {
+    error: sanitizedError,
     operationType,
-    path
+    path: sanitizedPath,
+    // We log UID for internal debugging but never expose it to the UI
+    uid: auth.currentUser?.uid ? '[MASKED_UID]' : null
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  console.error('Firestore Error:', JSON.stringify(logInfo));
+
+  // Security: Throw a generic error to prevent leaking internal state or PII to the UI Error Boundary
+  throw new Error(`Database operation failed (${operationType}). Please check your connection and try again.`);
 }

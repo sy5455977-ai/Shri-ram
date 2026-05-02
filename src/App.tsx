@@ -13,6 +13,9 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  declare props: { children: React.ReactNode };
+  public state: { hasError: boolean, error: any };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -90,13 +93,13 @@ const useLongPress = (callback: () => void, ms = 500) => {
 
 const ConversationItem = React.memo(({ 
   conv, 
-  activeConversationId, 
+  isActive,
   setActiveConversationId, 
   setMode, 
   deleteConversation 
 }: { 
   conv: Conversation, 
-  activeConversationId: string | null, 
+  isActive: boolean,
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
   deleteConversation: (e: React.MouseEvent, id: string) => void
@@ -116,7 +119,7 @@ const ConversationItem = React.memo(({
       }}
       className={cn(
         "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
-        activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
+        isActive ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
       tabIndex={0}
@@ -357,7 +360,7 @@ function AppContent() {
     return () => unsubscribe();
   }, [user]);
 
-  const createNewChat = async () => {
+  const createNewChat = React.useCallback(async () => {
     if (!user) {
       await signIn();
       return;
@@ -375,21 +378,19 @@ function AppContent() {
     } catch (error) {
       console.error("Error creating chat:", error);
     }
-  };
+  }, [user]);
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
+  const deleteConversation = React.useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
       await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
-        setActiveConversationId(null);
-      }
+      setActiveConversationId(prev => prev === id ? null : prev);
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
-  };
+  }, []);
 
-  const clearAllHistory = async () => {
+  const clearAllHistory = React.useCallback(async () => {
     if (!user) return;
 
     try {
@@ -401,13 +402,14 @@ function AppContent() {
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'conversations');
     }
-  };
+  }, [user]);
 
-  const filteredConversations = React.useMemo(() => 
-    conversations.filter(c => 
-      c.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [conversations, searchQuery]
-  );
+  const filteredConversations = React.useMemo(() => {
+    const queryLower = searchQuery.toLowerCase();
+    return conversations.filter(c =>
+      c.title.toLowerCase().includes(queryLower)
+    );
+  }, [conversations, searchQuery]);
 
   const navItems = React.useMemo(() => [
     { id: 'chat', label: 'Ask Anything', icon: MessageSquare, color: 'text-blue-400' },
@@ -490,7 +492,7 @@ function AppContent() {
             <ConversationItem
               key={conv.id}
               conv={conv}
-              activeConversationId={activeConversationId}
+              isActive={activeConversationId === conv.id}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
               deleteConversation={deleteConversation}

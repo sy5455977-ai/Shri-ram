@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { sanitize } from './lib/utils';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -59,15 +60,19 @@ export enum OperationType {
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: error instanceof Error ? sanitize(error.message) : sanitize(String(error)),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      userId: auth.currentUser?.uid ? '[UID_REDACTED]' : null,
+      email: auth.currentUser?.email ? '[EMAIL_REDACTED]' : null,
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: path ? sanitize(path) : null
   };
+
+  // Internal logging (still sanitized for safety)
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // Throw a generic error to the UI to prevent information disclosure
+  throw new Error(`Database operation failed (${operationType}). Please try again later.`);
 }

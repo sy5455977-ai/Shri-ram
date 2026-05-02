@@ -85,7 +85,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     const data = audioQueueRef.current.shift()!;
     if (!audioContextRef.current) return;
     const buffer = audioContextRef.current.createBuffer(1, data.length, 24000);
-    buffer.getChannelData(0).set(Array.from(data).map(v => v / 32768));
+    buffer.getChannelData(0).set(Array.from(data).map(v => (v as any) / 32768));
     const source = audioContextRef.current.createBufferSource();
     source.buffer = buffer;
     source.connect(audioContextRef.current.destination);
@@ -111,11 +111,11 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
             maps: "https://maps.google.com", gmail: "mailto:", calendar: "https://calendar.google.com"
           };
           const url = appUrls[args.app_name.toLowerCase()] || `https://www.google.com/search?q=${args.app_name}`;
-          window.open(url, '_blank');
+          window.open(url, '_blank', 'noopener,noreferrer');
           break;
         case "make_call": window.location.href = `tel:${args.recipient}`; break;
         case "send_message": window.location.href = `sms:${args.recipient}?body=${encodeURIComponent(args.message)}`; break;
-        case "search_web": window.open(`https://www.google.com/search?q=${encodeURIComponent(args.query)}`, '_blank'); break;
+        case "search_web": window.open(`https://www.google.com/search?q=${encodeURIComponent(args.query)}`, '_blank', 'noopener,noreferrer'); break;
         case "change_setting":
           if (args.setting === 'theme') document.documentElement.classList.toggle('dark', args.value === 'dark');
           break;

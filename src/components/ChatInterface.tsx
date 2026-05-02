@@ -79,11 +79,12 @@ const MessageItem = React.memo(({
         </div>
         
         {message.role === 'assistant' && (
-          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <button 
               onClick={() => handleCopy(message.content, message.id)}
               className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
               title="Copy"
+              aria-label="Copy message"
             >
               {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
@@ -92,6 +93,7 @@ const MessageItem = React.memo(({
                 onClick={handleRegenerate}
                 className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
                 title="Regenerate"
+                aria-label="Regenerate response"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -518,6 +520,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
               onClick={() => fileInputRef.current?.click()}
               className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all"
               title="Attach Image"
+              aria-label="Attach image"
             >
               <Paperclip className="w-5 h-5" />
             </button>
@@ -528,6 +531,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
                 deepReasoning ? "bg-nexus-primary/20 text-nexus-primary" : "text-nexus-muted hover:text-white"
               )}
               title="Deep Reasoning Mode"
+              aria-label="Deep reasoning mode"
             >
               <Brain className="w-5 h-5" />
             </button>

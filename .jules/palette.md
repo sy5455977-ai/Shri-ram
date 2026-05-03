@@ -1,0 +1,3 @@
+## 2025-05-14 - Accessibility Improvements for Icon-Only Buttons
+**Learning:** Found several icon-only buttons across the app components (App, ChatInterface, VisionMode, VoiceMode, Modal) that were missing ARIA labels and distinct focus states. This makes them inaccessible to screen readers and difficult to navigate via keyboard.
+**Action:** Always provide descriptive `aria-label` attributes for icon-only buttons and ensure `focus-visible` styles are implemented for better keyboard navigation. In this project, `focus-visible:ring-2 focus-visible:ring-nexus-primary` (or similar for danger actions) is the preferred pattern.

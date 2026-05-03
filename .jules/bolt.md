@@ -1,0 +1,3 @@
+## 2025-05-15 - Stabilizing Callbacks for List Performance
+**Learning:** In chat-like interfaces where messages update frequently, traditional `useCallback` often becomes unstable because it depends on the `messages` state. This causes all `React.memo`-ed list items to re-render on every new message or input change.
+**Action:** Use a `useRef` to track the latest state (e.g., `messagesRef`) and reference that ref within the `useCallback`. This allows the callback reference to remain stable, truly unblocking `React.memo` for list items. Combine this with "prop flattening" (passing `isActive: boolean` instead of `activeId: string`) to maximize memoization hits.

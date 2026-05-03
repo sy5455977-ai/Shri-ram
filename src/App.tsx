@@ -13,6 +13,9 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  public state: { hasError: boolean, error: any };
+  declare props: { children: React.ReactNode };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -131,7 +134,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded"
+        aria-label="Delete conversation"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -444,7 +448,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -512,7 +520,8 @@ function AppContent() {
                   </div>
                   <button 
                     onClick={() => deleteReminder(idx)}
-                    className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                    className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded"
+                    aria-label="Delete reminder"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -527,9 +536,10 @@ function AppContent() {
           <button 
             onClick={() => setPerformanceMode(!performanceMode)}
             className={cn(
-              "w-full flex items-center justify-between p-3 rounded-xl transition-all",
+              "w-full flex items-center justify-between p-3 rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
               performanceMode ? "bg-nexus-primary/10 text-nexus-primary" : "text-nexus-muted hover:bg-white/5"
             )}
+            aria-label="Toggle performance mode"
           >
             <div className="flex items-center space-x-2">
               <Zap className="w-4 h-4" />
@@ -571,8 +581,9 @@ function AppContent() {
                 {systemHealth !== 'stable' && (
                   <button 
                     onClick={() => window.location.reload()}
-                    className="p-1 hover:bg-white/10 rounded text-nexus-primary"
+                    className="p-1 hover:bg-white/10 rounded text-nexus-primary focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                     title="Refresh System"
+                    aria-label="Refresh system health"
                   >
                     <RefreshCw className="w-3 h-3" />
                   </button>
@@ -595,7 +606,11 @@ function AppContent() {
                   <p className="text-[10px] text-nexus-muted truncate">{user.email}</p>
                 </div>
               </div>
-              <button onClick={logOut} className="p-2 text-nexus-muted hover:text-red-400 transition-colors">
+              <button
+                onClick={logOut}
+                className="p-2 text-nexus-muted hover:text-red-400 transition-colors focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded-lg"
+                aria-label="Log out"
+              >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
@@ -619,16 +634,21 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
                   onClick={() => setPerformanceMode(!performanceMode)}
                   className={cn(
-                    "p-2 rounded-xl transition-all flex items-center space-x-2",
+                    "p-2 rounded-xl transition-all flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                     performanceMode ? "bg-orange-500/20 text-orange-500" : "hover:bg-white/5 text-nexus-muted"
                   )}
                   title={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
+                  aria-label={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
                 >
                   <Zap className={cn("w-5 h-5", performanceMode && "fill-current")} />
                   <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
@@ -667,8 +687,9 @@ function AppContent() {
             {mode === 'chat' && activeConversationId && (
               <button 
                 onClick={(e) => deleteConversation(e, activeConversationId)}
-                className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
+                className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-red-400 outline-none"
                 title="Delete Current Chat"
+                aria-label="Delete current chat"
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:block text-[10px] font-bold uppercase tracking-widest">Delete Chat</span>
@@ -748,8 +769,9 @@ function AppContent() {
             </div>
             <button 
               onClick={stopVoice}
-              className="p-1.5 hover:bg-red-500/20 rounded-full text-red-400 transition-colors"
+              className="p-1.5 hover:bg-red-500/20 rounded-full text-red-400 transition-colors focus-visible:ring-2 focus-visible:ring-red-400 outline-none"
               title="Stop Voice Session"
+              aria-label="Stop Voice Session"
             >
               <X className="w-3.5 h-3.5" />
             </button>

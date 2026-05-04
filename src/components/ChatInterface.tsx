@@ -79,10 +79,11 @@ const MessageItem = React.memo(({
         </div>
         
         {message.role === 'assistant' && (
-          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <button 
               onClick={() => handleCopy(message.content, message.id)}
-              className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+              className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+              aria-label="Copy message"
               title="Copy"
             >
               {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -90,7 +91,8 @@ const MessageItem = React.memo(({
             {index === totalMessages - 1 && (
               <button 
                 onClick={handleRegenerate}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                aria-label="Regenerate response"
                 title="Regenerate"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -516,7 +518,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
           <div className="flex items-center space-x-1">
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all"
+              className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+              aria-label="Attach Image"
               title="Attach Image"
             >
               <Paperclip className="w-5 h-5" />
@@ -524,9 +527,10 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <button
               onClick={() => setDeepReasoning(!deepReasoning)}
               className={cn(
-                "p-3 rounded-xl transition-all flex items-center space-x-1",
+                "p-3 rounded-xl transition-all flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                 deepReasoning ? "bg-nexus-primary/20 text-nexus-primary" : "text-nexus-muted hover:text-white"
               )}
+              aria-label={deepReasoning ? "Disable Deep Reasoning" : "Enable Deep Reasoning"}
               title="Deep Reasoning Mode"
             >
               <Brain className="w-5 h-5" />
@@ -552,10 +556,11 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             onClick={() => handleSend()}
             disabled={isLoading || (!input.trim() && !selectedImage && !!auth.currentUser)}
             className={cn(
-              "p-3 rounded-xl nexus-gradient text-white transition-all",
+              "p-3 rounded-xl nexus-gradient text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
               (isLoading || (!input.trim() && !selectedImage && !!auth.currentUser)) && "opacity-50 cursor-not-allowed",
               !auth.currentUser && "flex items-center space-x-2 px-6"
             )}
+            aria-label={!auth.currentUser ? "Sign In to Chat" : "Send message"}
           >
             {isLoading ? (
               <Loader2 className="w-6 h-6 animate-spin" />

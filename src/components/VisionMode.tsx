@@ -189,7 +189,8 @@ export default function VisionMode() {
               </div>
               <button
                 onClick={captureImage}
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white flex items-center justify-center hover:scale-110 transition-transform z-30"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white flex items-center justify-center hover:scale-110 transition-transform z-30 focus-visible:ring-4 focus-visible:ring-nexus-primary outline-none"
+                aria-label="Capture image"
               >
                 <div className="w-16 h-16 rounded-full bg-white" />
               </button>
@@ -200,7 +201,8 @@ export default function VisionMode() {
               <div className="absolute top-4 right-4 flex space-x-2">
                 <button 
                   onClick={reset}
-                  className="p-3 bg-nexus-bg/80 backdrop-blur-md rounded-xl text-white hover:bg-nexus-bg transition-colors"
+                  className="p-3 bg-nexus-bg/80 backdrop-blur-md rounded-xl text-white hover:bg-nexus-bg transition-colors focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                  aria-label="Reset camera"
                 >
                   <RefreshCw className="w-6 h-6" />
                 </button>

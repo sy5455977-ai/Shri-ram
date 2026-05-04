@@ -203,10 +203,11 @@ export default function VoiceMode() {
           onClick={() => setIsMuted(!isMuted)}
           disabled={!isActive}
           className={cn(
-            "p-4 rounded-2xl transition-all",
+            "p-4 rounded-2xl transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
             isMuted ? "bg-red-500/20 text-red-500" : "glass text-nexus-muted hover:text-nexus-primary",
             !isActive && "opacity-50 cursor-not-allowed"
           )}
+          aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
         >
           {isMuted ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
         </button>
@@ -214,15 +215,17 @@ export default function VoiceMode() {
         <button
           onClick={isActive ? stopSession : startSession}
           className={cn(
-            "w-20 h-20 rounded-full flex items-center justify-center transition-all nexus-glow",
+            "w-20 h-20 rounded-full flex items-center justify-center transition-all nexus-glow focus-visible:ring-4 focus-visible:ring-nexus-primary outline-none",
             isActive ? "bg-red-500 hover:bg-red-600" : "nexus-gradient hover:scale-105"
           )}
+          aria-label={isActive ? "Stop voice session" : "Start voice session"}
         >
           {isActive ? <PhoneOff className="w-10 h-10 text-white" /> : <Phone className="w-10 h-10 text-white" />}
         </button>
 
         <button
-          className="p-4 rounded-2xl glass text-nexus-muted hover:text-nexus-primary transition-all"
+          className="p-4 rounded-2xl glass text-nexus-muted hover:text-nexus-primary transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+          aria-label="Toggle speaker"
         >
           <Volume2 className="w-8 h-8" />
         </button>

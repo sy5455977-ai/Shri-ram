@@ -1,0 +1,3 @@
+## 2025-05-15 - Universal Accessibility Audit & Standardized Focus States
+**Learning:** Many icon-only buttons lacked ARIA labels, and focus states were either missing or inconsistent, making keyboard navigation difficult. Standardizing focus rings and ensuring every action has a clear label significantly improves the "invisible UX" for assistive technologies.
+**Action:** Always apply `focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none` to primary interactive elements and `focus-visible:ring-red-400` for destructive actions. For hidden-on-hover actions (like message copy buttons), use `focus-within:opacity-100` on the container to ensure they become visible when tabbed to.

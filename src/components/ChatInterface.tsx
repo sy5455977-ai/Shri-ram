@@ -79,19 +79,21 @@ const MessageItem = React.memo(({
         </div>
         
         {message.role === 'assistant' && (
-          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <button 
               onClick={() => handleCopy(message.content, message.id)}
-              className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+              className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
               title="Copy"
+              aria-label="Copy message"
             >
               {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
             {index === totalMessages - 1 && (
               <button 
                 onClick={handleRegenerate}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                 title="Regenerate"
+                aria-label="Regenerate response"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -417,7 +419,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
           <div className="flex justify-center mb-4">
             <button 
               onClick={() => setMessageLimit(prev => prev + 30)}
-              className="text-[10px] font-black text-nexus-primary hover:text-white uppercase tracking-[0.3em] px-4 py-2 rounded-full border border-nexus-primary/20 hover:bg-nexus-primary/10 transition-all"
+              className="text-[10px] font-black text-nexus-primary hover:text-white uppercase tracking-[0.3em] px-4 py-2 rounded-full border border-nexus-primary/20 hover:bg-nexus-primary/10 transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+              aria-label="Load previous messages"
             >
               Load Previous Messages
             </button>
@@ -427,7 +430,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
           <div className="flex justify-end mb-4">
             <button 
               onClick={() => setShowClearModal(true)}
-              className="text-[10px] font-bold text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center space-x-1"
+              className="text-[10px] font-bold text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-red-400 outline-none"
+              aria-label="Clear all messages in this chat"
             >
               <Trash2 className="w-3 h-3" />
               <span>Clear Messages</span>
@@ -512,22 +516,24 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2 glass p-2 rounded-2xl">
+        <div className="flex items-center gap-2 glass p-2 rounded-2xl focus-within:ring-2 focus-within:ring-nexus-primary/30 transition-all">
           <div className="flex items-center space-x-1">
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all"
+              className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
               title="Attach Image"
+              aria-label="Attach an image"
             >
               <Paperclip className="w-5 h-5" />
             </button>
             <button
               onClick={() => setDeepReasoning(!deepReasoning)}
               className={cn(
-                "p-3 rounded-xl transition-all flex items-center space-x-1",
+                "p-3 rounded-xl transition-all flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                 deepReasoning ? "bg-nexus-primary/20 text-nexus-primary" : "text-nexus-muted hover:text-white"
               )}
               title="Deep Reasoning Mode"
+              aria-label={deepReasoning ? "Disable deep reasoning" : "Enable deep reasoning"}
             >
               <Brain className="w-5 h-5" />
             </button>
@@ -546,16 +552,18 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder={deepReasoning ? "Ask a complex question..." : "Ask NEXUS anything..."}
-            className="flex-1 bg-transparent border-none focus:ring-0 text-nexus-text placeholder:text-nexus-muted px-2"
+            className="flex-1 bg-transparent border-none focus:ring-0 text-nexus-text placeholder:text-nexus-muted px-2 outline-none"
+            aria-label="Chat input"
           />
           <button
             onClick={() => handleSend()}
             disabled={isLoading || (!input.trim() && !selectedImage && !!auth.currentUser)}
             className={cn(
-              "p-3 rounded-xl nexus-gradient text-white transition-all",
+              "p-3 rounded-xl nexus-gradient text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
               (isLoading || (!input.trim() && !selectedImage && !!auth.currentUser)) && "opacity-50 cursor-not-allowed",
               !auth.currentUser && "flex items-center space-x-2 px-6"
             )}
+            aria-label={!auth.currentUser ? "Sign in to chat" : "Send message"}
           >
             {isLoading ? (
               <Loader2 className="w-6 h-6 animate-spin" />

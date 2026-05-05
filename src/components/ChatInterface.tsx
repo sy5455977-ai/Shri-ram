@@ -15,21 +15,25 @@ interface ChatInterfaceProps {
   performanceMode?: boolean;
 }
 
+/**
+ * Optimized MessageItem component.
+ * PERFORMANCE WIN: Uses "Prop Flattening" (isLast, isCopied) to ensure O(1) re-renders.
+ * Older messages in the list no longer re-render when the selection or list size changes,
+ * because they only depend on static booleans rather than raw IDs or index comparisons.
+ */
 const MessageItem = React.memo(({ 
   message, 
-  index, 
-  totalMessages, 
+  isLast,
   handleCopy, 
   handleRegenerate, 
-  copiedId,
+  isCopied,
   performanceMode
 }: { 
   message: Message, 
-  index: number, 
-  totalMessages: number,
+  isLast: boolean,
   handleCopy: (text: string, id: string) => void,
-  handleRegenerate: () => void,
-  copiedId: string | null,
+  handleRegenerate?: () => void,
+  isCopied: boolean,
   performanceMode?: boolean
 }) => {
   return (
@@ -85,9 +89,9 @@ const MessageItem = React.memo(({
               className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
               title="Copy"
             >
-              {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {isCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
-            {index === totalMessages - 1 && (
+            {isLast && handleRegenerate && (
               <button 
                 onClick={handleRegenerate}
                 className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
@@ -472,11 +476,10 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <MessageItem
               key={message.id}
               message={message}
-              index={index}
-              totalMessages={messages.length}
+              isLast={index === messages.length - 1}
               handleCopy={handleCopy}
-              handleRegenerate={handleRegenerate}
-              copiedId={copiedId}
+              handleRegenerate={index === messages.length - 1 ? handleRegenerate : undefined}
+              isCopied={copiedId === message.id}
               performanceMode={performanceMode}
             />
           ))}

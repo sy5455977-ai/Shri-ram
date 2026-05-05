@@ -18,6 +18,7 @@ import {
   limit
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { sanitize } from './lib/utils';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -58,16 +59,22 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const rawErrorMessage = error instanceof Error ? error.message : String(error);
+
   const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: sanitize(rawErrorMessage),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      userId: sanitize(auth.currentUser?.uid),
+      email: sanitize(auth.currentUser?.email),
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: sanitize(path)
   };
+
+  // Log sanitized error info
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // Throw a generic error to prevent leaking internal details to the UI
+  throw new Error('Database operation failed. System Doctor is investigating.');
 }

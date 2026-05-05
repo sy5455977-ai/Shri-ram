@@ -83,6 +83,7 @@ const MessageItem = React.memo(({
             <button 
               onClick={() => handleCopy(message.content, message.id)}
               className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+              aria-label={copiedId === message.id ? "Copied" : "Copy message"}
               title="Copy"
             >
               {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -91,6 +92,7 @@ const MessageItem = React.memo(({
               <button 
                 onClick={handleRegenerate}
                 className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+                aria-label="Regenerate response"
                 title="Regenerate"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -517,6 +519,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <button 
               onClick={() => fileInputRef.current?.click()}
               className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all"
+              aria-label="Attach image"
               title="Attach Image"
             >
               <Paperclip className="w-5 h-5" />
@@ -527,6 +530,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
                 "p-3 rounded-xl transition-all flex items-center space-x-1",
                 deepReasoning ? "bg-nexus-primary/20 text-nexus-primary" : "text-nexus-muted hover:text-white"
               )}
+              aria-label={deepReasoning ? "Disable Deep Reasoning Mode" : "Enable Deep Reasoning Mode"}
               title="Deep Reasoning Mode"
             >
               <Brain className="w-5 h-5" />

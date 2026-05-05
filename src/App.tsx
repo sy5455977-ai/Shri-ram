@@ -13,9 +13,11 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  public state: { hasError: boolean, error: any } = { hasError: false, error: null };
+  declare props: { children: React.ReactNode };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
-    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: any) {
@@ -444,7 +446,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -595,7 +601,11 @@ function AppContent() {
                   <p className="text-[10px] text-nexus-muted truncate">{user.email}</p>
                 </div>
               </div>
-              <button onClick={logOut} className="p-2 text-nexus-muted hover:text-red-400 transition-colors">
+              <button
+                onClick={logOut}
+                className="p-2 text-nexus-muted hover:text-red-400 transition-colors"
+                aria-label="Sign out"
+              >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
@@ -619,7 +629,11 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button

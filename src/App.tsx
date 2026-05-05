@@ -102,9 +102,7 @@ const ConversationItem = React.memo(({
   deleteConversation: (e: React.MouseEvent, id: string) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    deleteConversation({ stopPropagation: () => {} } as any, conv.id);
   });
 
   return (
@@ -131,7 +129,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded"
+        aria-label={`Delete conversation ${conv.title}`}
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -155,6 +154,7 @@ function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
@@ -377,15 +377,24 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
+  const deleteConversation = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    setConversationToDelete(id);
+  };
+
+  const performDeleteConversation = async () => {
+    if (!conversationToDelete) return;
     try {
-      await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
+      await deleteDoc(doc(db, 'conversations', conversationToDelete));
+      if (activeConversationId === conversationToDelete) {
         setActiveConversationId(null);
       }
+      showToast("Conversation deleted", "success");
     } catch (error) {
       console.error("Error deleting chat:", error);
+      showToast("Failed to delete conversation", "error");
+    } finally {
+      setConversationToDelete(null);
     }
   };
 
@@ -425,6 +434,16 @@ function AppContent() {
         title="Clear All History"
         message="Are you sure you want to delete all your conversations? This action is permanent and cannot be reversed by NEXUS."
         confirmText="Delete Everything"
+        type="danger"
+      />
+
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={performDeleteConversation}
+        title="Delete Conversation"
+        message="Are you sure you want to delete this conversation? This action is permanent and cannot be reversed."
+        confirmText="Delete"
         type="danger"
       />
 

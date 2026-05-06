@@ -13,6 +13,9 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  public state: { hasError: boolean, error: any };
+  declare props: { children: React.ReactNode };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -102,9 +105,7 @@ const ConversationItem = React.memo(({
   deleteConversation: (e: React.MouseEvent, id: string) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    deleteConversation({ stopPropagation: () => {} } as any, conv.id);
   });
 
   return (
@@ -115,7 +116,7 @@ const ConversationItem = React.memo(({
         setMode('chat');
       }}
       className={cn(
-        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
+        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none focus-within:bg-white/10",
         activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
@@ -131,7 +132,9 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded"
+        aria-label={`Delete ${conv.title}`}
+        title="Delete conversation"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -157,6 +160,7 @@ function AppContent() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
@@ -379,13 +383,23 @@ function AppContent() {
 
   const deleteConversation = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    const conv = conversations.find(c => c.id === id);
+    if (conv) setConversationToDelete(conv);
+  };
+
+  const confirmDelete = async () => {
+    if (!conversationToDelete) return;
     try {
-      await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
+      await deleteDoc(doc(db, 'conversations', conversationToDelete.id));
+      if (activeConversationId === conversationToDelete.id) {
         setActiveConversationId(null);
       }
+      showToast("Conversation deleted", "success");
     } catch (error) {
       console.error("Error deleting chat:", error);
+      showToast("Failed to delete conversation", "error");
+    } finally {
+      setConversationToDelete(null);
     }
   };
 
@@ -425,6 +439,16 @@ function AppContent() {
         title="Clear All History"
         message="Are you sure you want to delete all your conversations? This action is permanent and cannot be reversed by NEXUS."
         confirmText="Delete Everything"
+        type="danger"
+      />
+
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Conversation"
+        message={`Are you sure you want to delete "${conversationToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
         type="danger"
       />
 

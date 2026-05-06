@@ -13,6 +13,9 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  declare props: { children: React.ReactNode };
+  public state: { hasError: boolean, error: any };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -90,20 +93,20 @@ const useLongPress = (callback: () => void, ms = 500) => {
 
 const ConversationItem = React.memo(({ 
   conv, 
-  activeConversationId, 
+  isActive,
   setActiveConversationId, 
   setMode, 
   deleteConversation 
 }: { 
   conv: Conversation, 
-  activeConversationId: string | null, 
+  isActive: boolean,
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
-  deleteConversation: (e: React.MouseEvent, id: string) => void
+  deleteConversation: (id: string) => void
 }) => {
   const longPressProps = useLongPress(() => {
     if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
+      deleteConversation(conv.id);
     }
   });
 
@@ -116,7 +119,7 @@ const ConversationItem = React.memo(({
       }}
       className={cn(
         "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
-        activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
+        isActive ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
       tabIndex={0}
@@ -130,7 +133,10 @@ const ConversationItem = React.memo(({
       <MessageSquare className="w-4 h-4 shrink-0" />
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
-        onClick={(e) => deleteConversation(e, conv.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          deleteConversation(conv.id);
+        }}
         className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
       >
         <Trash2 className="w-3.5 h-3.5" />
@@ -377,17 +383,14 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const deleteConversation = React.useCallback(async (id: string) => {
     try {
       await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
-        setActiveConversationId(null);
-      }
+      setActiveConversationId(prev => prev === id ? null : prev);
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
-  };
+  }, []);
 
   const clearAllHistory = async () => {
     if (!user) return;
@@ -403,11 +406,12 @@ function AppContent() {
     }
   };
 
-  const filteredConversations = React.useMemo(() => 
-    conversations.filter(c => 
-      c.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [conversations, searchQuery]
-  );
+  const filteredConversations = React.useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return conversations.filter(c =>
+      c.title.toLowerCase().includes(query)
+    );
+  }, [conversations, searchQuery]);
 
   const navItems = React.useMemo(() => [
     { id: 'chat', label: 'Ask Anything', icon: MessageSquare, color: 'text-blue-400' },
@@ -490,7 +494,7 @@ function AppContent() {
             <ConversationItem
               key={conv.id}
               conv={conv}
-              activeConversationId={activeConversationId}
+              isActive={conv.id === activeConversationId}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
               deleteConversation={deleteConversation}
@@ -666,7 +670,7 @@ function AppContent() {
           <div className="flex items-center space-x-2 md:space-x-4">
             {mode === 'chat' && activeConversationId && (
               <button 
-                onClick={(e) => deleteConversation(e, activeConversationId)}
+                onClick={() => deleteConversation(activeConversationId)}
                 className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
                 title="Delete Current Chat"
               >

@@ -17,19 +17,17 @@ interface ChatInterfaceProps {
 
 const MessageItem = React.memo(({ 
   message, 
-  index, 
-  totalMessages, 
+  isLast,
   handleCopy, 
   handleRegenerate, 
-  copiedId,
+  isCopied,
   performanceMode
 }: { 
   message: Message, 
-  index: number, 
-  totalMessages: number,
+  isLast: boolean,
   handleCopy: (text: string, id: string) => void,
   handleRegenerate: () => void,
-  copiedId: string | null,
+  isCopied: boolean,
   performanceMode?: boolean
 }) => {
   return (
@@ -85,9 +83,9 @@ const MessageItem = React.memo(({
               className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
               title="Copy"
             >
-              {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {isCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
-            {index === totalMessages - 1 && (
+            {isLast && (
               <button 
                 onClick={handleRegenerate}
                 className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
@@ -121,6 +119,11 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
   const [showClearModal, setShowClearModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesRef = useRef<Message[]>([]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -164,13 +167,25 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
 
+  const handleSendRef = useRef<any>(null);
+
   const handleRegenerate = React.useCallback(async () => {
-    if (messages.length < 2) return;
-    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+    const currentMessages = messagesRef.current;
+    if (currentMessages.length < 2) return;
+
+    // Find last user message with O(1) space and efficient backward loop
+    let lastUserMessage = null;
+    for (let i = currentMessages.length - 1; i >= 0; i--) {
+      if (currentMessages[i].role === 'user') {
+        lastUserMessage = currentMessages[i];
+        break;
+      }
+    }
+
     if (!lastUserMessage) return;
 
     // Delete last assistant message if it exists
-    const lastMsg = messages[messages.length - 1];
+    const lastMsg = currentMessages[currentMessages.length - 1];
     if (lastMsg.role === 'assistant') {
       try {
         await deleteDoc(doc(db, 'conversations', conversationId!, 'messages', lastMsg.id));
@@ -181,8 +196,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
 
     setInput(lastUserMessage.content);
     if (lastUserMessage.image) setSelectedImage(lastUserMessage.image);
-    handleSend(lastUserMessage.content, lastUserMessage.image);
-  }, [messages, conversationId]);
+    handleSendRef.current?.(lastUserMessage.content, lastUserMessage.image);
+  }, [conversationId]); // Removed messages dependency for O(1) stability
 
   const handleSend = async (overrideInput?: string, overrideImage?: string | null) => {
     const finalInput = overrideInput !== undefined ? overrideInput : input;
@@ -267,7 +282,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
         responseText = await analyzeImage(userMessageContent || "Analyze this image", base64Data, mimeType) || "I couldn't analyze the image.";
       } else {
         // Pass conversation history for better context
-        const history = messages.map(m => ({ role: m.role, content: m.content }));
+        const history = messagesRef.current.map(m => ({ role: m.role, content: m.content }));
         const currentMessages = [...history, { role: 'user', content: userMessageContent }];
         
         const tools = [
@@ -357,7 +372,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
       });
 
       // Auto-generate title if it's the first message
-      if (messages.length === 0) {
+      if (messagesRef.current.length === 0) {
         const titlePrompt = `Generate a very short (max 5 words) descriptive title for a conversation that starts with: "${userMessageContent}"`;
         const titleResult = await generateText(titlePrompt);
         const titleText = titleResult.text || userMessageContent.slice(0, 30);
@@ -384,6 +399,10 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
       }
     }
   };
+
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -472,11 +491,10 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <MessageItem
               key={message.id}
               message={message}
-              index={index}
-              totalMessages={messages.length}
+              isLast={index === messages.length - 1}
               handleCopy={handleCopy}
               handleRegenerate={handleRegenerate}
-              copiedId={copiedId}
+              isCopied={copiedId === message.id}
               performanceMode={performanceMode}
             />
           ))}

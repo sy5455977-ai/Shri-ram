@@ -1,0 +1,3 @@
+## 2026-05-07 - [Keyboard Accessibility & Themed Modals]
+**Learning:** Browser native `window.confirm` is jarring and non-themed. Using a custom `Modal` improves the "delight" factor but requires explicit focus management and ARIA roles (`role="dialog"`, `aria-modal="true"`) to be as accessible as the native version. Hidden hover-only actions (like delete buttons) must be made visible on focus using `focus-within` or similar classes to be keyboard-accessible.
+**Action:** Always replace `window.confirm` with the themed `Modal` and ensure icon-only buttons have descriptive `aria-label` and `focus-visible` indicators.

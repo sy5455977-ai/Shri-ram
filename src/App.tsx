@@ -13,6 +13,9 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  public state: { hasError: boolean, error: any };
+  declare props: { children: React.ReactNode };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -93,18 +96,16 @@ const ConversationItem = React.memo(({
   activeConversationId, 
   setActiveConversationId, 
   setMode, 
-  deleteConversation 
+  onDeleteClick
 }: { 
   conv: Conversation, 
   activeConversationId: string | null, 
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
-  deleteConversation: (e: React.MouseEvent, id: string) => void
+  onDeleteClick: (id: string) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    onDeleteClick(conv.id);
   });
 
   return (
@@ -115,7 +116,7 @@ const ConversationItem = React.memo(({
         setMode('chat');
       }}
       className={cn(
-        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
+        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary",
         activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
@@ -130,8 +131,12 @@ const ConversationItem = React.memo(({
       <MessageSquare className="w-4 h-4 shrink-0" />
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
-        onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDeleteClick(conv.id);
+        }}
+        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all outline-none focus-within:opacity-100 focus-visible:ring-2 focus-visible:ring-red-400 rounded-lg"
+        aria-label={`Delete conversation ${conv.title}`}
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -155,6 +160,7 @@ function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
@@ -377,8 +383,7 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const deleteConversation = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'conversations', id));
       if (activeConversationId === id) {
@@ -428,6 +433,21 @@ function AppContent() {
         type="danger"
       />
 
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={() => {
+          if (conversationToDelete) {
+            deleteConversation(conversationToDelete);
+            setConversationToDelete(null);
+          }
+        }}
+        title="Delete Conversation"
+        message="Are you sure you want to delete this conversation? NEXUS will lose context of this chat."
+        confirmText="Delete Chat"
+        type="danger"
+      />
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -444,7 +464,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -452,7 +476,8 @@ function AppContent() {
         <div className="px-4 pb-4 shrink-0">
           <button 
             onClick={createNewChat}
-            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group"
+            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary"
+            aria-label="Create new chat"
           >
             <Plus className="w-5 h-5 text-nexus-primary group-hover:scale-110 transition-transform" />
             <span className="font-bold">New Chat</span>
@@ -493,7 +518,7 @@ function AppContent() {
               activeConversationId={activeConversationId}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
-              deleteConversation={deleteConversation}
+              onDeleteClick={(id) => setConversationToDelete(id)}
             />
           ))}
 
@@ -619,16 +644,21 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
                   onClick={() => setPerformanceMode(!performanceMode)}
                   className={cn(
-                    "p-2 rounded-xl transition-all flex items-center space-x-2",
-                    performanceMode ? "bg-orange-500/20 text-orange-500" : "hover:bg-white/5 text-nexus-muted"
+                    "p-2 rounded-xl transition-all flex items-center space-x-2 outline-none focus-visible:ring-2",
+                    performanceMode ? "bg-orange-500/20 text-orange-500 focus-visible:ring-orange-400" : "hover:bg-white/5 text-nexus-muted focus-visible:ring-nexus-primary"
                   )}
                   title={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
+                  aria-label={performanceMode ? "Disable performance mode" : "Enable performance mode"}
                 >
                   <Zap className={cn("w-5 h-5", performanceMode && "fill-current")} />
                   <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
@@ -666,9 +696,10 @@ function AppContent() {
           <div className="flex items-center space-x-2 md:space-x-4">
             {mode === 'chat' && activeConversationId && (
               <button 
-                onClick={(e) => deleteConversation(e, activeConversationId)}
-                className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
+                onClick={() => setConversationToDelete(activeConversationId)}
+                className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1 outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                 title="Delete Current Chat"
+                aria-label="Delete current chat"
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:block text-[10px] font-bold uppercase tracking-widest">Delete Chat</span>

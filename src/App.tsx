@@ -403,11 +403,12 @@ function AppContent() {
     }
   };
 
-  const filteredConversations = React.useMemo(() => 
-    conversations.filter(c => 
-      c.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [conversations, searchQuery]
-  );
+  const filteredConversations = React.useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return conversations.filter(c =>
+      c.title.toLowerCase().includes(query)
+    );
+  }, [conversations, searchQuery]);
 
   const navItems = React.useMemo(() => [
     { id: 'chat', label: 'Ask Anything', icon: MessageSquare, color: 'text-blue-400' },

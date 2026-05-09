@@ -17,19 +17,17 @@ interface ChatInterfaceProps {
 
 const MessageItem = React.memo(({ 
   message, 
-  index, 
-  totalMessages, 
+  isLast,
+  isCopied,
   handleCopy, 
   handleRegenerate, 
-  copiedId,
   performanceMode
 }: { 
   message: Message, 
-  index: number, 
-  totalMessages: number,
+  isLast: boolean,
+  isCopied: boolean,
   handleCopy: (text: string, id: string) => void,
   handleRegenerate: () => void,
-  copiedId: string | null,
   performanceMode?: boolean
 }) => {
   return (
@@ -85,9 +83,9 @@ const MessageItem = React.memo(({
               className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
               title="Copy"
             >
-              {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {isCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
-            {index === totalMessages - 1 && (
+            {isLast && (
               <button 
                 onClick={handleRegenerate}
                 className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
@@ -121,6 +119,16 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
   const [showClearModal, setShowClearModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Performance Optimization: Use refs to store the latest state and functions.
+  // This allows callbacks like handleRegenerate to remain stable across renders,
+  // preventing unnecessary re-renders of memoized child components.
+  const messagesRef = useRef<Message[]>([]);
+  const handleSendRef = useRef<((input?: string, image?: string | null) => Promise<void>) | null>(null);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -163,26 +171,6 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
-
-  const handleRegenerate = React.useCallback(async () => {
-    if (messages.length < 2) return;
-    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
-    if (!lastUserMessage) return;
-
-    // Delete last assistant message if it exists
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg.role === 'assistant') {
-      try {
-        await deleteDoc(doc(db, 'conversations', conversationId!, 'messages', lastMsg.id));
-      } catch (e) {
-        console.error("Error deleting for regeneration:", e);
-      }
-    }
-
-    setInput(lastUserMessage.content);
-    if (lastUserMessage.image) setSelectedImage(lastUserMessage.image);
-    handleSend(lastUserMessage.content, lastUserMessage.image);
-  }, [messages, conversationId]);
 
   const handleSend = async (overrideInput?: string, overrideImage?: string | null) => {
     const finalInput = overrideInput !== undefined ? overrideInput : input;
@@ -385,6 +373,39 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
     }
   };
 
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  }, [handleSend]);
+
+  const handleRegenerate = React.useCallback(async () => {
+    const currentMessages = messagesRef.current;
+    if (currentMessages.length < 2) return;
+
+    let lastUserMessage = null;
+    for (let i = currentMessages.length - 1; i >= 0; i--) {
+      if (currentMessages[i].role === 'user') {
+        lastUserMessage = currentMessages[i];
+        break;
+      }
+    }
+
+    if (!lastUserMessage) return;
+
+    // Delete last assistant message if it exists
+    const lastMsg = currentMessages[currentMessages.length - 1];
+    if (lastMsg.role === 'assistant') {
+      try {
+        await deleteDoc(doc(db, 'conversations', conversationId!, 'messages', lastMsg.id));
+      } catch (e) {
+        console.error("Error deleting for regeneration:", e);
+      }
+    }
+
+    setInput(lastUserMessage.content);
+    if (lastUserMessage.image) setSelectedImage(lastUserMessage.image);
+    handleSendRef.current?.(lastUserMessage.content, lastUserMessage.image);
+  }, [conversationId]);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -472,11 +493,10 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <MessageItem
               key={message.id}
               message={message}
-              index={index}
-              totalMessages={messages.length}
+              isLast={index === messages.length - 1}
+              isCopied={copiedId === message.id}
               handleCopy={handleCopy}
               handleRegenerate={handleRegenerate}
-              copiedId={copiedId}
               performanceMode={performanceMode}
             />
           ))}

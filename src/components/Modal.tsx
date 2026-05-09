@@ -24,10 +24,17 @@ export default function Modal({
   cancelText = "Cancel",
   type = 'info'
 }: ModalProps) {
+  const titleId = React.useId();
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -52,11 +59,12 @@ export default function Modal({
                   )}>
                     <AlertTriangle className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">{title}</h3>
+                  <h3 id={titleId} className="text-xl font-bold text-white">{title}</h3>
                 </div>
                 <button 
                   onClick={onClose}
-                  className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-colors"
+                  aria-label="Close modal"
+                  className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                 >
                   <X className="w-5 h-5" />
                 </button>

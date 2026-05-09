@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, X } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -24,10 +24,14 @@ export default function Modal({
   cancelText = "Cancel",
   type = 'info'
 }: ModalProps) {
+  const titleId = useId();
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          role="dialog" aria-modal="true" aria-labelledby={titleId}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -52,11 +56,11 @@ export default function Modal({
                   )}>
                     <AlertTriangle className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">{title}</h3>
+                  <h3 id={titleId} className="text-xl font-bold text-white">{title}</h3>
                 </div>
                 <button 
-                  onClick={onClose}
-                  className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-colors"
+                  onClick={onClose} aria-label="Close modal"
+                  className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -69,19 +73,16 @@ export default function Modal({
               <div className="flex items-center space-x-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all"
+                  className="flex-1 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                 >
                   {cancelText}
                 </button>
                 <button
-                  onClick={() => {
-                    onConfirm();
-                    onClose();
-                  }}
+                  onClick={() => { onConfirm(); onClose(); }}
                   className={cn(
-                    "flex-1 px-6 py-3 rounded-2xl font-bold transition-all nexus-glow",
-                    type === 'danger' ? "bg-red-500 hover:bg-red-600 text-white" :
-                    "nexus-gradient text-white"
+                    "flex-1 px-6 py-3 rounded-2xl font-bold transition-all nexus-glow focus-visible:ring-2 outline-none",
+                    type === 'danger' ? "bg-red-500 hover:bg-red-600 text-white focus-visible:ring-red-400" :
+                    "nexus-gradient text-white focus-visible:ring-nexus-primary"
                   )}
                 >
                   {confirmText}

@@ -1,0 +1,3 @@
+## 2025-05-15 - Standardizing Accessible Modals and Interactive Feedback
+**Learning:** Replacing native browser components (like `window.confirm`) with themed, accessible React portals (`Modal`) significantly improves UX consistency while allowing for better ARIA attribute control. Additionally, providing immediate asynchronous feedback via toasts (e.g., after deletion) is crucial for user confidence in a highly interactive "Nexus" environment.
+**Action:** Always prefer themed Modals for destructive actions and ensure they implement `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`. Accompany state-changing operations with success/error toast notifications.

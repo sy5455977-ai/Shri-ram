@@ -18,6 +18,7 @@ import {
   limit
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { sanitize } from './lib/utils';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -68,6 +69,8 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Sanitize potentially sensitive info before logging
+  console.error('Firestore Error: ', sanitize(JSON.stringify(errInfo)));
+  // Throw a generic error to avoid leaking details to the UI
+  throw new Error('Database operation failed. System Doctor is investigating.');
 }

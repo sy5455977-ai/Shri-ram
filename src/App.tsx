@@ -93,45 +93,32 @@ const ConversationItem = React.memo(({
   activeConversationId, 
   setActiveConversationId, 
   setMode, 
-  deleteConversation 
+  onDeleteClick
 }: { 
   conv: Conversation, 
   activeConversationId: string | null, 
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
-  deleteConversation: (e: React.MouseEvent, id: string) => void
+  onDeleteClick: (e: React.MouseEvent, id: string) => void
 }) => {
-  const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
-  });
+  const longPressProps = useLongPress(() => onDeleteClick({ stopPropagation: () => {} } as any, conv.id));
 
   return (
     <div
       {...longPressProps}
-      onClick={() => {
-        setActiveConversationId(conv.id);
-        setMode('chat');
-      }}
+      onClick={() => { setActiveConversationId(conv.id); setMode('chat'); }}
       className={cn(
-        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
+        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
         activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          setActiveConversationId(conv.id);
-          setMode('chat');
-        }
-      }}
+      role="button" tabIndex={0} aria-label={`Open conversation: ${conv.title}`}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setActiveConversationId(conv.id); setMode('chat'); } }}
     >
       <MessageSquare className="w-4 h-4 shrink-0" />
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
-        onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        onClick={(e) => onDeleteClick(e, conv.id)} aria-label={`Delete conversation: ${conv.title}`}
+        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded-md"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -157,6 +144,7 @@ function AppContent() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
@@ -377,16 +365,15 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const deleteConversation = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
-        setActiveConversationId(null);
-      }
+      if (activeConversationId === id) setActiveConversationId(null);
+      showToast("Conversation deleted successfully", "success");
     } catch (error) {
       console.error("Error deleting chat:", error);
-    }
+      showToast("Failed to delete conversation", "error");
+    } finally { setConversationToDelete(null); }
   };
 
   const clearAllHistory = async () => {
@@ -425,6 +412,16 @@ function AppContent() {
         title="Clear All History"
         message="Are you sure you want to delete all your conversations? This action is permanent and cannot be reversed by NEXUS."
         confirmText="Delete Everything"
+        type="danger"
+      />
+
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={() => conversationToDelete && deleteConversation(conversationToDelete)}
+        title="Delete Conversation"
+        message="Are you sure you want to delete this conversation? This action cannot be undone."
+        confirmText="Delete Chat"
         type="danger"
       />
 
@@ -493,7 +490,7 @@ function AppContent() {
               activeConversationId={activeConversationId}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
-              deleteConversation={deleteConversation}
+              onDeleteClick={(e, id) => { e.stopPropagation(); setConversationToDelete(id); }}
             />
           ))}
 

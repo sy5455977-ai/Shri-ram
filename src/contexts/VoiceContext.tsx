@@ -399,7 +399,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
           try {
             // Try opening in a new tab first, as it bypasses some iframe restrictions
-            const newWindow = window.open(targetUrl, '_blank');
+            const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
             if (!newWindow) {
               // Fallback to location.href if popup blocker prevents it
               window.location.href = targetUrl;
@@ -413,7 +413,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         case "make_call":
           try {
             const callUrl = `tel:${args.recipient}`;
-            const newWindow = window.open(callUrl, '_blank');
+            const newWindow = window.open(callUrl, '_blank', 'noopener,noreferrer');
             if (!newWindow) window.location.href = callUrl;
             result.message = `Initiating call to ${args.recipient}.`;
           } catch (e) {
@@ -424,7 +424,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         case "search_contact":
           try {
             const contactUrl = `content://contacts/people/`;
-            const newWindow = window.open(contactUrl, '_blank');
+            const newWindow = window.open(contactUrl, '_blank', 'noopener,noreferrer');
             if (!newWindow) window.location.href = contactUrl;
             result.message = `Opening contacts for ${args.name}.`;
           } catch (e) {
@@ -435,7 +435,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         case "send_whatsapp":
           try {
             const waUrl = `whatsapp://send?text=${encodeURIComponent(args.message)}`;
-            const newWindow = window.open(waUrl, '_blank');
+            const newWindow = window.open(waUrl, '_blank', 'noopener,noreferrer');
             if (!newWindow) window.location.href = waUrl;
             result.message = `Opening WhatsApp to send message.`;
           } catch (e) {
@@ -444,7 +444,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
           break;
 
         case "search_web":
-          window.open(`https://www.google.com/search?q=${encodeURIComponent(args.query)}`, '_blank');
+          window.open(`https://www.google.com/search?q=${encodeURIComponent(args.query)}`, '_blank', 'noopener,noreferrer');
           result.message = `Searching the web for "${args.query}". Here's what I found.`;
           break;
 

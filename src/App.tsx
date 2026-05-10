@@ -93,18 +93,16 @@ const ConversationItem = React.memo(({
   activeConversationId, 
   setActiveConversationId, 
   setMode, 
-  deleteConversation 
+  onDeleteClick
 }: { 
   conv: Conversation, 
   activeConversationId: string | null, 
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
-  deleteConversation: (e: React.MouseEvent, id: string) => void
+  onDeleteClick: (e: React.MouseEvent | void, conv: Conversation) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    onDeleteClick(undefined, conv);
   });
 
   return (
@@ -115,7 +113,7 @@ const ConversationItem = React.memo(({
         setMode('chat');
       }}
       className={cn(
-        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
+        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
         activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
@@ -130,8 +128,9 @@ const ConversationItem = React.memo(({
       <MessageSquare className="w-4 h-4 shrink-0" />
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
-        onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        onClick={(e) => onDeleteClick(e, conv)}
+        aria-label={`Delete conversation ${conv.title}`}
+        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded-md"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -157,6 +156,7 @@ function AppContent() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
@@ -377,13 +377,14 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const handleDeleteConversation = async () => {
+    if (!conversationToDelete) return;
     try {
-      await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
+      await deleteDoc(doc(db, 'conversations', conversationToDelete.id));
+      if (activeConversationId === conversationToDelete.id) {
         setActiveConversationId(null);
       }
+      setConversationToDelete(null);
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
@@ -428,6 +429,16 @@ function AppContent() {
         type="danger"
       />
 
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={handleDeleteConversation}
+        title="Delete Conversation"
+        message={`Are you sure you want to delete "${conversationToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete Chat"
+        type="danger"
+      />
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -444,7 +455,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -452,7 +467,8 @@ function AppContent() {
         <div className="px-4 pb-4 shrink-0">
           <button 
             onClick={createNewChat}
-            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group"
+            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="Create new chat"
           >
             <Plus className="w-5 h-5 text-nexus-primary group-hover:scale-110 transition-transform" />
             <span className="font-bold">New Chat</span>
@@ -493,7 +509,10 @@ function AppContent() {
               activeConversationId={activeConversationId}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
-              deleteConversation={deleteConversation}
+              onDeleteClick={(e, c) => {
+                e?.stopPropagation();
+                setConversationToDelete(c);
+              }}
             />
           ))}
 
@@ -619,15 +638,20 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
                   onClick={() => setPerformanceMode(!performanceMode)}
                   className={cn(
-                    "p-2 rounded-xl transition-all flex items-center space-x-2",
+                    "p-2 rounded-xl transition-all flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                     performanceMode ? "bg-orange-500/20 text-orange-500" : "hover:bg-white/5 text-nexus-muted"
                   )}
+                  aria-label={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
                   title={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
                 >
                   <Zap className={cn("w-5 h-5", performanceMode && "fill-current")} />
@@ -666,8 +690,12 @@ function AppContent() {
           <div className="flex items-center space-x-2 md:space-x-4">
             {mode === 'chat' && activeConversationId && (
               <button 
-                onClick={(e) => deleteConversation(e, activeConversationId)}
-                className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
+                onClick={(e) => {
+                  const conv = conversations.find(c => c.id === activeConversationId);
+                  if (conv) setConversationToDelete(conv);
+                }}
+                className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-red-400 outline-none"
+                aria-label="Delete current chat"
                 title="Delete Current Chat"
               >
                 <Trash2 className="w-4 h-4" />
@@ -699,9 +727,10 @@ function AppContent() {
                   key={item.id}
                   onClick={() => setMode(item.id as Mode)}
                   className={cn(
-                    "p-2 md:px-4 md:py-2 rounded-lg transition-all flex items-center space-x-2",
+                    "p-2 md:px-4 md:py-2 rounded-lg transition-all flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                     mode === item.id ? "bg-nexus-primary text-nexus-bg shadow-[0_0_15px_rgba(0,242,255,0.4)]" : "text-nexus-muted hover:text-white"
                   )}
+                  aria-label={`Switch to ${item.label} mode`}
                   title={item.label}
                 >
                   <item.icon className="w-4 h-4" />

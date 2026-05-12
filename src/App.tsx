@@ -93,18 +93,16 @@ const ConversationItem = React.memo(({
   activeConversationId, 
   setActiveConversationId, 
   setMode, 
-  deleteConversation 
+  onDeleteClick
 }: { 
   conv: Conversation, 
   activeConversationId: string | null, 
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
-  deleteConversation: (e: React.MouseEvent, id: string) => void
+  onDeleteClick: (conv: Conversation) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    onDeleteClick(conv);
   });
 
   return (
@@ -130,8 +128,12 @@ const ConversationItem = React.memo(({
       <MessageSquare className="w-4 h-4 shrink-0" />
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
-        onClick={(e) => deleteConversation(e, conv.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDeleteClick(conv);
+        }}
         className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        aria-label={`Delete ${conv.title}`}
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -157,6 +159,7 @@ function AppContent() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
@@ -377,15 +380,16 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const deleteConversation = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'conversations', id));
       if (activeConversationId === id) {
         setActiveConversationId(null);
       }
+      showToast("Conversation deleted", "success");
     } catch (error) {
       console.error("Error deleting chat:", error);
+      showToast("Failed to delete conversation", "error");
     }
   };
 
@@ -428,6 +432,21 @@ function AppContent() {
         type="danger"
       />
 
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={() => {
+          if (conversationToDelete) {
+            deleteConversation(conversationToDelete.id);
+            setConversationToDelete(null);
+          }
+        }}
+        title="Delete Conversation"
+        message={`Are you sure you want to delete "${conversationToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete Chat"
+        type="danger"
+      />
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -444,7 +463,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -453,6 +476,7 @@ function AppContent() {
           <button 
             onClick={createNewChat}
             className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group"
+            aria-label="Create new chat"
           >
             <Plus className="w-5 h-5 text-nexus-primary group-hover:scale-110 transition-transform" />
             <span className="font-bold">New Chat</span>
@@ -493,7 +517,7 @@ function AppContent() {
               activeConversationId={activeConversationId}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
-              deleteConversation={deleteConversation}
+              onDeleteClick={setConversationToDelete}
             />
           ))}
 
@@ -619,7 +643,11 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
@@ -666,7 +694,10 @@ function AppContent() {
           <div className="flex items-center space-x-2 md:space-x-4">
             {mode === 'chat' && activeConversationId && (
               <button 
-                onClick={(e) => deleteConversation(e, activeConversationId)}
+                onClick={() => {
+                  const conv = conversations.find(c => c.id === activeConversationId);
+                  if (conv) setConversationToDelete(conv);
+                }}
                 className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
                 title="Delete Current Chat"
               >

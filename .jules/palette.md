@@ -1,0 +1,3 @@
+## 2025-05-12 - Standardized Deletion Flow and Focus States
+**Learning:** Browser-native dialogs like `window.confirm` disrupt the immersive experience of a themed application and lack consistency with the app's design system. Standardizing on a custom Modal component allows for better visual integration and provides a clear success/error feedback loop via toasts, which users find more reassuring for destructive actions.
+**Action:** Always prefer themed Modal components over native alerts for critical user actions, and ensure every icon-only button is paired with an explicit ARIA label and a visible focus-ring for keyboard navigation.

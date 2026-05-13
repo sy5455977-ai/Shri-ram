@@ -1,0 +1,3 @@
+## 2026-05-13 - [Optimizing List Rendering and Array Search]
+**Learning:** In React applications with large message lists, passing dynamic metadata like 'index' or 'totalMessages' to memoized children causes (N)$ re-renders on every list update. Derived boolean props (e.g., 'isLast') effectively stabilize props for the majority of the list. Additionally, using a manual backward loop for finding items from the end of an array is more space-efficient ((1)$) than cloning and reversing ((N)$).
+**Action:** Always prefer flattened boolean props for memoized list items and avoid array cloning operations like [...arr].reverse() in hot paths.

@@ -1,0 +1,3 @@
+## 2025-05-14 - [Prop Flattening & Selective Callback Passing]
+**Learning:** Performance gains from `React.memo` in lists are often negated by passing dynamic values (like `index`, `totalCount`, or `activeId`) or unstable callbacks. Even if the callback is wrapped in `useCallback`, it might depend on the list state (e.g., `messages`), causing it to change on every update.
+**Action:** Flatten props into stable booleans (e.g., `isLast`, `isCopied`) and conditionally pass unstable callbacks only to the items that actually need them (e.g., passing `handleRegenerate` only to the last message). This achieves O(1) re-renders for list additions.

@@ -17,19 +17,17 @@ interface ChatInterfaceProps {
 
 const MessageItem = React.memo(({ 
   message, 
-  index, 
-  totalMessages, 
+  isLast,
+  isCopied,
   handleCopy, 
   handleRegenerate, 
-  copiedId,
   performanceMode
 }: { 
   message: Message, 
-  index: number, 
-  totalMessages: number,
+  isLast: boolean,
+  isCopied: boolean,
   handleCopy: (text: string, id: string) => void,
-  handleRegenerate: () => void,
-  copiedId: string | null,
+  handleRegenerate?: () => void,
   performanceMode?: boolean
 }) => {
   return (
@@ -85,9 +83,9 @@ const MessageItem = React.memo(({
               className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
               title="Copy"
             >
-              {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {isCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
-            {index === totalMessages - 1 && (
+            {isLast && handleRegenerate && (
               <button 
                 onClick={handleRegenerate}
                 className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
@@ -166,7 +164,16 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
 
   const handleRegenerate = React.useCallback(async () => {
     if (messages.length < 2) return;
-    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+
+    // Optimized search for last user message using O(1) space
+    let lastUserMessage = null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        lastUserMessage = messages[i];
+        break;
+      }
+    }
+
     if (!lastUserMessage) return;
 
     // Delete last assistant message if it exists
@@ -468,18 +475,20 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
         )}
         
         <AnimatePresence initial={false}>
-          {messages.map((message, index) => (
-            <MessageItem
-              key={message.id}
-              message={message}
-              index={index}
-              totalMessages={messages.length}
-              handleCopy={handleCopy}
-              handleRegenerate={handleRegenerate}
-              copiedId={copiedId}
-              performanceMode={performanceMode}
-            />
-          ))}
+          {messages.map((message, index) => {
+            const isLast = index === messages.length - 1;
+            return (
+              <MessageItem
+                key={message.id}
+                message={message}
+                isLast={isLast}
+                isCopied={copiedId === message.id}
+                handleCopy={handleCopy}
+                handleRegenerate={isLast ? handleRegenerate : undefined}
+                performanceMode={performanceMode}
+              />
+            );
+          })}
         </AnimatePresence>
         
         {isLoading && (

@@ -399,11 +399,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
           try {
             // Try opening in a new tab first, as it bypasses some iframe restrictions
-            const newWindow = window.open(targetUrl, '_blank');
-            if (!newWindow) {
-              // Fallback to location.href if popup blocker prevents it
-              window.location.href = targetUrl;
-            }
+            // Note: with noopener, newWindow will be null in many browsers, so we avoid fallback to location.href
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
           } catch (e) {
             console.error("Failed to open app:", e);
             result.message = `Browser ne ${args.app_name} ko block kar diya.`;
@@ -413,8 +410,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         case "make_call":
           try {
             const callUrl = `tel:${args.recipient}`;
-            const newWindow = window.open(callUrl, '_blank');
-            if (!newWindow) window.location.href = callUrl;
+            window.open(callUrl, '_blank', 'noopener,noreferrer');
             result.message = `Initiating call to ${args.recipient}.`;
           } catch (e) {
             result.message = `Call blocked by browser.`;
@@ -424,8 +420,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         case "search_contact":
           try {
             const contactUrl = `content://contacts/people/`;
-            const newWindow = window.open(contactUrl, '_blank');
-            if (!newWindow) window.location.href = contactUrl;
+            window.open(contactUrl, '_blank', 'noopener,noreferrer');
             result.message = `Opening contacts for ${args.name}.`;
           } catch (e) {
             result.message = `Contacts blocked by browser.`;
@@ -435,8 +430,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         case "send_whatsapp":
           try {
             const waUrl = `whatsapp://send?text=${encodeURIComponent(args.message)}`;
-            const newWindow = window.open(waUrl, '_blank');
-            if (!newWindow) window.location.href = waUrl;
+            window.open(waUrl, '_blank', 'noopener,noreferrer');
             result.message = `Opening WhatsApp to send message.`;
           } catch (e) {
             result.message = `WhatsApp blocked by browser.`;
@@ -444,7 +438,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
           break;
 
         case "search_web":
-          window.open(`https://www.google.com/search?q=${encodeURIComponent(args.query)}`, '_blank');
+          window.open(`https://www.google.com/search?q=${encodeURIComponent(args.query)}`, '_blank', 'noopener,noreferrer');
           result.message = `Searching the web for "${args.query}". Here's what I found.`;
           break;
 

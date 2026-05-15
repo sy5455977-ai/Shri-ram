@@ -68,6 +68,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
+  // Log detailed error for debugging, but don't leak it to the UI
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  throw new Error('Database operation failed. System Doctor is investigating.');
 }

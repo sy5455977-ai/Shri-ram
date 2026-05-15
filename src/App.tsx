@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ChatInterface from './components/ChatInterface';
@@ -68,16 +68,18 @@ async function testConnection() {
 
 const useLongPress = (callback: () => void, ms = 500) => {
   const [startLongPress, setStartLongPress] = useState(false);
+  const callbackRef = useRef(callback);
+  useEffect(() => { callbackRef.current = callback; }, [callback]);
 
   useEffect(() => {
     let timerId: any;
     if (startLongPress) {
-      timerId = setTimeout(callback, ms);
+      timerId = setTimeout(() => callbackRef.current(), ms);
     } else {
       clearTimeout(timerId);
     }
     return () => clearTimeout(timerId);
-  }, [startLongPress, callback, ms]);
+  }, [startLongPress, ms]);
 
   return {
     onMouseDown: () => setStartLongPress(true),
@@ -90,13 +92,13 @@ const useLongPress = (callback: () => void, ms = 500) => {
 
 const ConversationItem = React.memo(({ 
   conv, 
-  activeConversationId, 
+  isActive,
   setActiveConversationId, 
   setMode, 
   deleteConversation 
 }: { 
   conv: Conversation, 
-  activeConversationId: string | null, 
+  isActive: boolean,
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
   deleteConversation: (e: React.MouseEvent, id: string) => void
@@ -116,7 +118,7 @@ const ConversationItem = React.memo(({
       }}
       className={cn(
         "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
-        activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
+        isActive ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
       tabIndex={0}
@@ -357,7 +359,7 @@ function AppContent() {
     return () => unsubscribe();
   }, [user]);
 
-  const createNewChat = async () => {
+  const createNewChat = React.useCallback(async () => {
     if (!user) {
       await signIn();
       return;
@@ -375,19 +377,17 @@ function AppContent() {
     } catch (error) {
       console.error("Error creating chat:", error);
     }
-  };
+  }, [user]);
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
+  const deleteConversation = React.useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
       await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
-        setActiveConversationId(null);
-      }
+      setActiveConversationId(prev => prev === id ? null : prev);
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
-  };
+  }, []);
 
   const clearAllHistory = async () => {
     if (!user) return;
@@ -490,7 +490,7 @@ function AppContent() {
             <ConversationItem
               key={conv.id}
               conv={conv}
-              activeConversationId={activeConversationId}
+              isActive={activeConversationId === conv.id}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
               deleteConversation={deleteConversation}

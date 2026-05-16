@@ -79,10 +79,11 @@ const MessageItem = React.memo(({
         </div>
         
         {message.role === 'assistant' && (
-          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <button 
               onClick={() => handleCopy(message.content, message.id)}
-              className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+              className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+              aria-label="Copy message"
               title="Copy"
             >
               {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -90,7 +91,8 @@ const MessageItem = React.memo(({
             {index === totalMessages - 1 && (
               <button 
                 onClick={handleRegenerate}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                aria-label="Regenerate response"
                 title="Regenerate"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -427,7 +429,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
           <div className="flex justify-end mb-4">
             <button 
               onClick={() => setShowClearModal(true)}
-              className="text-[10px] font-bold text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center space-x-1"
+              className="text-[10px] font-bold text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded-lg p-1"
+              aria-label="Clear Messages"
             >
               <Trash2 className="w-3 h-3" />
               <span>Clear Messages</span>
@@ -512,19 +515,22 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2 glass p-2 rounded-2xl">
+        <div className="flex items-center gap-2 glass p-2 rounded-2xl focus-within:ring-2 focus-within:ring-nexus-primary transition-all">
           <div className="flex items-center space-x-1">
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all"
+              className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+              aria-label="Attach Image"
               title="Attach Image"
             >
               <Paperclip className="w-5 h-5" />
             </button>
             <button
               onClick={() => setDeepReasoning(!deepReasoning)}
+              aria-label="Toggle Deep Reasoning Mode"
+              aria-pressed={deepReasoning}
               className={cn(
-                "p-3 rounded-xl transition-all flex items-center space-x-1",
+                "p-3 rounded-xl transition-all flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                 deepReasoning ? "bg-nexus-primary/20 text-nexus-primary" : "text-nexus-muted hover:text-white"
               )}
               title="Deep Reasoning Mode"
@@ -551,8 +557,9 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
           <button
             onClick={() => handleSend()}
             disabled={isLoading || (!input.trim() && !selectedImage && !!auth.currentUser)}
+            aria-label={!auth.currentUser ? "Sign In to Chat" : "Send message"}
             className={cn(
-              "p-3 rounded-xl nexus-gradient text-white transition-all",
+              "p-3 rounded-xl nexus-gradient text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
               (isLoading || (!input.trim() && !selectedImage && !!auth.currentUser)) && "opacity-50 cursor-not-allowed",
               !auth.currentUser && "flex items-center space-x-2 px-6"
             )}

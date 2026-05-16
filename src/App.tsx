@@ -102,9 +102,7 @@ const ConversationItem = React.memo(({
   deleteConversation: (e: React.MouseEvent, id: string) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    deleteConversation({ stopPropagation: () => {} } as any, conv.id);
   });
 
   return (
@@ -157,6 +155,7 @@ function AppContent() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
@@ -377,15 +376,18 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const deleteConversation = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'conversations', id));
       if (activeConversationId === id) {
         setActiveConversationId(null);
       }
+      showToast("Conversation deleted", "success");
     } catch (error) {
       console.error("Error deleting chat:", error);
+      showToast("Failed to delete conversation", "error");
+    } finally {
+      setConversationToDelete(null);
     }
   };
 
@@ -428,6 +430,16 @@ function AppContent() {
         type="danger"
       />
 
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={() => conversationToDelete && deleteConversation(conversationToDelete)}
+        title="Delete Conversation"
+        message={`Are you sure you want to delete "${conversations.find(c => c.id === conversationToDelete)?.title}"? This action is permanent.`}
+        confirmText="Delete"
+        type="danger"
+      />
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -444,7 +456,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -452,7 +468,8 @@ function AppContent() {
         <div className="px-4 pb-4 shrink-0">
           <button 
             onClick={createNewChat}
-            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group"
+            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="New Chat"
           >
             <Plus className="w-5 h-5 text-nexus-primary group-hover:scale-110 transition-transform" />
             <span className="font-bold">New Chat</span>
@@ -493,7 +510,10 @@ function AppContent() {
               activeConversationId={activeConversationId}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
-              deleteConversation={deleteConversation}
+              deleteConversation={(e, id) => {
+                e.stopPropagation();
+                setConversationToDelete(id);
+              }}
             />
           ))}
 
@@ -512,7 +532,8 @@ function AppContent() {
                   </div>
                   <button 
                     onClick={() => deleteReminder(idx)}
-                    className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                    className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded"
+                    aria-label={`Delete ${reminder.task}`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -595,7 +616,11 @@ function AppContent() {
                   <p className="text-[10px] text-nexus-muted truncate">{user.email}</p>
                 </div>
               </div>
-              <button onClick={logOut} className="p-2 text-nexus-muted hover:text-red-400 transition-colors">
+              <button
+                onClick={logOut}
+                className="p-2 text-nexus-muted hover:text-red-400 transition-colors focus-visible:ring-2 focus-visible:ring-red-400 outline-none rounded-lg"
+                aria-label="Log out"
+              >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
@@ -619,7 +644,11 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
@@ -666,7 +695,10 @@ function AppContent() {
           <div className="flex items-center space-x-2 md:space-x-4">
             {mode === 'chat' && activeConversationId && (
               <button 
-                onClick={(e) => deleteConversation(e, activeConversationId)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConversationToDelete(activeConversationId);
+                }}
                 className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
                 title="Delete Current Chat"
               >

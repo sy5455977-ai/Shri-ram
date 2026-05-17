@@ -85,7 +85,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     const data = audioQueueRef.current.shift()!;
     if (!audioContextRef.current) return;
     const buffer = audioContextRef.current.createBuffer(1, data.length, 24000);
-    buffer.getChannelData(0).set(Array.from(data).map(v => v / 32768));
+    buffer.getChannelData(0).set(Array.from(data).map((v: number) => v / 32768));
     const source = audioContextRef.current.createBufferSource();
     source.buffer = buffer;
     source.connect(audioContextRef.current.destination);

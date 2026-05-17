@@ -58,16 +58,10 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Log technical details for developers without manually bundling sensitive user PII.
+  // The raw error object is logged to the console for debugging, but is not exposed to the user.
+  console.error(`[Firestore Error] ${operationType} at ${path || 'unknown'}:`, error);
+
+  // Throw a generic, safe error message to the UI to prevent internal detail leakage.
+  throw new Error(`NEXUS encountered a system issue during ${operationType}. Please try again later.`);
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ChatInterface from './components/ChatInterface';
@@ -12,11 +12,17 @@ import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp,
 import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
@@ -27,7 +33,10 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 
   render() {
-    if (this.state.hasError) {
+    const { hasError, error } = (this as any).state;
+    const { children } = (this as any).props;
+
+    if (hasError) {
       return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-8 text-center">
           <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
@@ -38,7 +47,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             NEXUS has encountered a critical system error. The link has been severed to prevent further instability.
           </p>
           <div className="bg-white/5 p-4 rounded-xl text-left font-mono text-xs text-red-400 mb-8 max-w-2xl overflow-auto">
-            {this.state.error?.toString()}
+            {error?.toString()}
           </div>
           <button 
             onClick={() => window.location.reload()}
@@ -50,7 +59,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
       );
     }
 
-    return this.props.children;
+    return children;
   }
 }
 

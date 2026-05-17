@@ -17,19 +17,17 @@ interface ChatInterfaceProps {
 
 const MessageItem = React.memo(({ 
   message, 
-  index, 
-  totalMessages, 
+  isLast,
+  isCopied,
   handleCopy, 
   handleRegenerate, 
-  copiedId,
   performanceMode
 }: { 
   message: Message, 
-  index: number, 
-  totalMessages: number,
+  isLast: boolean,
+  isCopied: boolean,
   handleCopy: (text: string, id: string) => void,
   handleRegenerate: () => void,
-  copiedId: string | null,
   performanceMode?: boolean
 }) => {
   return (
@@ -85,9 +83,9 @@ const MessageItem = React.memo(({
               className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
               title="Copy"
             >
-              {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {isCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
-            {index === totalMessages - 1 && (
+            {isLast && (
               <button 
                 onClick={handleRegenerate}
                 className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
@@ -111,6 +109,20 @@ const MessageItem = React.memo(({
 export default function ChatInterface({ conversationId, onConversationCreated, performanceMode }: ChatInterfaceProps) {
   const { isActive: isVoiceActive, sendTextToVoice } = useVoice();
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Ref-syncing for stable callbacks
+  const messagesRef = useRef(messages);
+  const conversationIdRef = useRef(conversationId);
+  const handleSendRef = useRef<any>(null);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    conversationIdRef.current = conversationId;
+  }, [conversationId]);
+
   const [messageLimit, setMessageLimit] = useState(30);
   const [hasMore, setHasMore] = useState(false);
   const [input, setInput] = useState('');
@@ -165,15 +177,27 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
   }, []);
 
   const handleRegenerate = React.useCallback(async () => {
-    if (messages.length < 2) return;
-    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+    const currentMessages = messagesRef.current;
+    const currentConvId = conversationIdRef.current;
+
+    if (currentMessages.length < 2) return;
+
+    // Efficient backward search to avoid array cloning and O(N) space
+    let lastUserMessage = null;
+    for (let i = currentMessages.length - 1; i >= 0; i--) {
+      if (currentMessages[i].role === 'user') {
+        lastUserMessage = currentMessages[i];
+        break;
+      }
+    }
+
     if (!lastUserMessage) return;
 
     // Delete last assistant message if it exists
-    const lastMsg = messages[messages.length - 1];
+    const lastMsg = currentMessages[currentMessages.length - 1];
     if (lastMsg.role === 'assistant') {
       try {
-        await deleteDoc(doc(db, 'conversations', conversationId!, 'messages', lastMsg.id));
+        await deleteDoc(doc(db, 'conversations', currentConvId!, 'messages', lastMsg.id));
       } catch (e) {
         console.error("Error deleting for regeneration:", e);
       }
@@ -181,8 +205,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
 
     setInput(lastUserMessage.content);
     if (lastUserMessage.image) setSelectedImage(lastUserMessage.image);
-    handleSend(lastUserMessage.content, lastUserMessage.image);
-  }, [messages, conversationId]);
+    handleSendRef.current?.(lastUserMessage.content, lastUserMessage.image);
+  }, []); // Stable callback via Ref-syncing
 
   const handleSend = async (overrideInput?: string, overrideImage?: string | null) => {
     const finalInput = overrideInput !== undefined ? overrideInput : input;
@@ -385,6 +409,11 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
     }
   };
 
+  // Keep handleSendRef updated for the stable handleRegenerate
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  }, [handleSend]);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -472,11 +501,10 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <MessageItem
               key={message.id}
               message={message}
-              index={index}
-              totalMessages={messages.length}
+              isLast={index === messages.length - 1}
+              isCopied={copiedId === message.id}
               handleCopy={handleCopy}
               handleRegenerate={handleRegenerate}
-              copiedId={copiedId}
               performanceMode={performanceMode}
             />
           ))}

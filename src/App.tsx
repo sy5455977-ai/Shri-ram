@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ChatInterface from './components/ChatInterface';
@@ -12,11 +12,19 @@ import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp,
 import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // @ts-ignore
+  props: ErrorBoundaryProps;
+  state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
@@ -26,8 +34,11 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  render() {
-    if (this.state.hasError) {
+  render(): React.ReactNode {
+    const { hasError, error } = this.state;
+    const { children } = this.props;
+
+    if (hasError) {
       return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-8 text-center">
           <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
@@ -38,7 +49,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             NEXUS has encountered a critical system error. The link has been severed to prevent further instability.
           </p>
           <div className="bg-white/5 p-4 rounded-xl text-left font-mono text-xs text-red-400 mb-8 max-w-2xl overflow-auto">
-            {this.state.error?.toString()}
+            {error?.toString()}
           </div>
           <button 
             onClick={() => window.location.reload()}
@@ -50,7 +61,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
       );
     }
 
-    return this.props.children;
+    return children;
   }
 }
 
@@ -102,9 +113,7 @@ const ConversationItem = React.memo(({
   deleteConversation: (e: React.MouseEvent, id: string) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    deleteConversation({ stopPropagation: () => {} } as any, conv.id);
   });
 
   return (
@@ -115,11 +124,12 @@ const ConversationItem = React.memo(({
         setMode('chat');
       }}
       className={cn(
-        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
+        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
         activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
       tabIndex={0}
+      aria-label={`Conversation: ${conv.title}`}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           setActiveConversationId(conv.id);
@@ -131,7 +141,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400 rounded-md outline-none"
+        aria-label={`Delete ${conv.title}`}
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -157,6 +168,7 @@ function AppContent() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
@@ -377,15 +389,24 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
+  const deleteConversation = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    setConversationToDelete(id);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) return;
     try {
-      await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
+      await deleteDoc(doc(db, 'conversations', conversationToDelete));
+      if (activeConversationId === conversationToDelete) {
         setActiveConversationId(null);
       }
+      showToast("Conversation deleted", "success");
     } catch (error) {
       console.error("Error deleting chat:", error);
+      showToast("Failed to delete conversation", "error");
+    } finally {
+      setConversationToDelete(null);
     }
   };
 
@@ -428,6 +449,16 @@ function AppContent() {
         type="danger"
       />
 
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={confirmDeleteConversation}
+        title="Delete Conversation"
+        message="Are you sure you want to delete this conversation? This action cannot be undone."
+        confirmText="Delete"
+        type="danger"
+      />
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -444,7 +475,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -452,7 +487,8 @@ function AppContent() {
         <div className="px-4 pb-4 shrink-0">
           <button 
             onClick={createNewChat}
-            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group"
+            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="New Chat"
           >
             <Plus className="w-5 h-5 text-nexus-primary group-hover:scale-110 transition-transform" />
             <span className="font-bold">New Chat</span>
@@ -468,7 +504,8 @@ function AppContent() {
               placeholder="Search chats..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-nexus-primary outline-none transition-all"
+              aria-label="Search chats"
             />
           </div>
         </div>
@@ -512,7 +549,8 @@ function AppContent() {
                   </div>
                   <button 
                     onClick={() => deleteReminder(idx)}
-                    className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                    className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400 rounded-md outline-none"
+                    aria-label={`Delete reminder: ${reminder.task}`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -526,8 +564,10 @@ function AppContent() {
         <div className="p-4 border-t border-white/10 shrink-0 space-y-3">
           <button 
             onClick={() => setPerformanceMode(!performanceMode)}
+            aria-label="Toggle Performance Mode"
+            aria-pressed={performanceMode}
             className={cn(
-              "w-full flex items-center justify-between p-3 rounded-xl transition-all",
+              "w-full flex items-center justify-between p-3 rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
               performanceMode ? "bg-nexus-primary/10 text-nexus-primary" : "text-nexus-muted hover:bg-white/5"
             )}
           >
@@ -548,7 +588,8 @@ function AppContent() {
           {deferredPrompt && (
             <button 
               onClick={installApp}
-              className="w-full flex items-center justify-center space-x-2 p-3 rounded-2xl bg-nexus-primary/10 border border-nexus-primary/20 text-nexus-primary hover:bg-nexus-primary/20 transition-all group"
+              className="w-full flex items-center justify-center space-x-2 p-3 rounded-2xl bg-nexus-primary/10 border border-nexus-primary/20 text-nexus-primary hover:bg-nexus-primary/20 transition-all group focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+              aria-label="Install NEXUS App"
             >
               <Zap className="w-4 h-4 group-hover:scale-110 transition-transform" />
               <span className="text-xs font-black uppercase tracking-widest">Install NEXUS App</span>
@@ -571,8 +612,9 @@ function AppContent() {
                 {systemHealth !== 'stable' && (
                   <button 
                     onClick={() => window.location.reload()}
-                    className="p-1 hover:bg-white/10 rounded text-nexus-primary"
+                    className="p-1 hover:bg-white/10 rounded text-nexus-primary focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                     title="Refresh System"
+                    aria-label="Refresh System"
                   >
                     <RefreshCw className="w-3 h-3" />
                   </button>
@@ -581,7 +623,8 @@ function AppContent() {
 
               <button 
                 onClick={() => setShowClearModal(true)}
-                className="flex items-center space-x-3 w-full p-3 rounded-2xl text-red-400/60 hover:text-red-400 hover:bg-red-400/5 transition-all text-sm font-bold group"
+                className="flex items-center space-x-3 w-full p-3 rounded-2xl text-red-400/60 hover:text-red-400 hover:bg-red-400/5 transition-all text-sm font-bold group focus-visible:ring-2 focus-visible:ring-red-400 outline-none"
+                aria-label="Clear All History"
               >
                 <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span>Clear All History</span>
@@ -595,7 +638,11 @@ function AppContent() {
                   <p className="text-[10px] text-nexus-muted truncate">{user.email}</p>
                 </div>
               </div>
-              <button onClick={logOut} className="p-2 text-nexus-muted hover:text-red-400 transition-colors">
+              <button
+                onClick={logOut}
+                className="p-2 text-nexus-muted hover:text-red-400 transition-colors focus-visible:ring-2 focus-visible:ring-red-400 rounded-lg outline-none"
+                aria-label="Log out"
+              >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
@@ -603,7 +650,8 @@ function AppContent() {
           ) : (
             <button 
               onClick={signIn}
-              className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl nexus-gradient text-white font-bold"
+              className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl nexus-gradient text-white font-bold focus-visible:ring-2 focus-visible:ring-white outline-none"
+              aria-label="Sign In"
             >
               <LogIn className="w-5 h-5" />
               <span>Sign In</span>
@@ -619,16 +667,22 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button
                   onClick={() => setPerformanceMode(!performanceMode)}
                   className={cn(
-                    "p-2 rounded-xl transition-all flex items-center space-x-2",
+                    "p-2 rounded-xl transition-all flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                     performanceMode ? "bg-orange-500/20 text-orange-500" : "hover:bg-white/5 text-nexus-muted"
                   )}
                   title={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
+                  aria-label={performanceMode ? "Disable Low Performance Mode" : "Enable Low Performance Mode"}
+                  aria-pressed={performanceMode}
                 >
                   <Zap className={cn("w-5 h-5", performanceMode && "fill-current")} />
                   <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
@@ -667,8 +721,9 @@ function AppContent() {
             {mode === 'chat' && activeConversationId && (
               <button 
                 onClick={(e) => deleteConversation(e, activeConversationId)}
-                className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1"
+                className="p-2 hover:bg-red-500/10 rounded-lg text-nexus-muted hover:text-red-400 transition-all flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-red-400 outline-none"
                 title="Delete Current Chat"
+                aria-label="Delete Current Chat"
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:block text-[10px] font-bold uppercase tracking-widest">Delete Chat</span>
@@ -699,10 +754,12 @@ function AppContent() {
                   key={item.id}
                   onClick={() => setMode(item.id as Mode)}
                   className={cn(
-                    "p-2 md:px-4 md:py-2 rounded-lg transition-all flex items-center space-x-2",
+                    "p-2 md:px-4 md:py-2 rounded-lg transition-all flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-white outline-none",
                     mode === item.id ? "bg-nexus-primary text-nexus-bg shadow-[0_0_15px_rgba(0,242,255,0.4)]" : "text-nexus-muted hover:text-white"
                   )}
                   title={item.label}
+                  aria-label={item.label}
+                  aria-pressed={mode === item.id}
                 >
                   <item.icon className="w-4 h-4" />
                   <span className="hidden md:block text-[10px] font-black uppercase tracking-widest">{item.label}</span>
@@ -748,8 +805,9 @@ function AppContent() {
             </div>
             <button 
               onClick={stopVoice}
-              className="p-1.5 hover:bg-red-500/20 rounded-full text-red-400 transition-colors"
+              className="p-1.5 hover:bg-red-500/20 rounded-full text-red-400 transition-colors focus-visible:ring-2 focus-visible:ring-red-400 outline-none"
               title="Stop Voice Session"
+              aria-label="Stop Voice Session"
             >
               <X className="w-3.5 h-3.5" />
             </button>

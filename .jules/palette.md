@@ -1,0 +1,3 @@
+## 2026-05-17 - Accessibility Baseline & Interactive Feedback
+**Learning:** Icon-only buttons and toggle states (like Deep Reasoning) were missing crucial ARIA attributes, making the app nearly unusable for screen reader users. Additionally, native `window.confirm` was jarring in a highly themed "high-tech" UI like NEXUS.
+**Action:** Always implement `aria-label` for icons, `aria-pressed` for toggles, and use themed Modals for destructive actions to maintain immersion and accessibility. Use `focus-visible` to ensure keyboard users have clear visual cues without affecting the aesthetic for mouse users.

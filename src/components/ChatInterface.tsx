@@ -512,7 +512,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2 glass p-2 rounded-2xl">
+        <div className="flex items-center gap-2 glass p-2 rounded-2xl focus-within:ring-2 focus-within:ring-nexus-primary transition-all">
           <div className="flex items-center space-x-1">
             <button 
               onClick={() => fileInputRef.current?.click()}
@@ -524,10 +524,11 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             <button
               onClick={() => setDeepReasoning(!deepReasoning)}
               className={cn(
-                "p-3 rounded-xl transition-all flex items-center space-x-1",
+                "p-3 rounded-xl transition-all flex items-center space-x-1 focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                 deepReasoning ? "bg-nexus-primary/20 text-nexus-primary" : "text-nexus-muted hover:text-white"
               )}
               title="Deep Reasoning Mode"
+              aria-pressed={deepReasoning}
             >
               <Brain className="w-5 h-5" />
             </button>
@@ -546,7 +547,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder={deepReasoning ? "Ask a complex question..." : "Ask NEXUS anything..."}
-            className="flex-1 bg-transparent border-none focus:ring-0 text-nexus-text placeholder:text-nexus-muted px-2"
+            className="flex-1 bg-transparent border-none focus:ring-0 text-nexus-text placeholder:text-nexus-muted px-2 outline-none"
+            aria-label="Message input"
           />
           <button
             onClick={() => handleSend()}

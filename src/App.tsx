@@ -13,6 +13,11 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  // @ts-ignore
+  state: { hasError: boolean, error: any };
+  // @ts-ignore
+  props: { children: React.ReactNode };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -102,9 +107,7 @@ const ConversationItem = React.memo(({
   deleteConversation: (e: React.MouseEvent, id: string) => void
 }) => {
   const longPressProps = useLongPress(() => {
-    if (window.confirm(`Delete "${conv.title}"?`)) {
-      deleteConversation({ stopPropagation: () => {} } as any, conv.id);
-    }
+    deleteConversation({ stopPropagation: () => {} } as any, conv.id);
   });
 
   return (
@@ -115,11 +118,12 @@ const ConversationItem = React.memo(({
         setMode('chat');
       }}
       className={cn(
-        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
+        "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
         activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
       tabIndex={0}
+      aria-label={`Conversation: ${conv.title}`}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           setActiveConversationId(conv.id);
@@ -131,7 +135,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400/50 rounded outline-none"
+        aria-label={`Delete ${conv.title}`}
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -377,15 +382,25 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+
+  const deleteConversation = (e: React.MouseEvent, id: string) => {
+    e?.stopPropagation();
+    setConversationToDelete(id);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) return;
     try {
-      await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
+      await deleteDoc(doc(db, 'conversations', conversationToDelete));
+      if (activeConversationId === conversationToDelete) {
         setActiveConversationId(null);
       }
+      showToast('Conversation deleted', 'success');
     } catch (error) {
       console.error("Error deleting chat:", error);
+    } finally {
+      setConversationToDelete(null);
     }
   };
 
@@ -428,6 +443,16 @@ function AppContent() {
         type="danger"
       />
 
+      <Modal
+        isOpen={!!conversationToDelete}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={confirmDeleteConversation}
+        title="Delete Conversation"
+        message="Are you sure you want to delete this conversation? This action is permanent."
+        confirmText="Delete"
+        type="danger"
+      />
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -444,7 +469,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none transition-all"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -452,7 +481,8 @@ function AppContent() {
         <div className="px-4 pb-4 shrink-0">
           <button 
             onClick={createNewChat}
-            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group"
+            className="w-full flex items-center justify-center space-x-2 p-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all group focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="Create new chat"
           >
             <Plus className="w-5 h-5 text-nexus-primary group-hover:scale-110 transition-transform" />
             <span className="font-bold">New Chat</span>
@@ -595,7 +625,11 @@ function AppContent() {
                   <p className="text-[10px] text-nexus-muted truncate">{user.email}</p>
                 </div>
               </div>
-              <button onClick={logOut} className="p-2 text-nexus-muted hover:text-red-400 transition-colors">
+              <button
+                onClick={logOut}
+                className="p-2 text-nexus-muted hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-400/50 rounded-lg outline-none"
+                aria-label="Log out"
+              >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
@@ -619,7 +653,11 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none transition-all"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button

@@ -13,6 +13,11 @@ import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  // @ts-ignore
+  state: { hasError: boolean, error: any };
+  // @ts-ignore
+  props: { children: React.ReactNode };
+
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -90,14 +95,14 @@ const useLongPress = (callback: () => void, ms = 500) => {
 
 const ConversationItem = React.memo(({ 
   conv, 
-  activeConversationId, 
+  isActive,
   setActiveConversationId, 
   setMode, 
   deleteConversation 
 }: { 
   conv: Conversation, 
-  activeConversationId: string | null, 
-  setActiveConversationId: (id: string) => void, 
+  isActive: boolean,
+  setActiveConversationId: (id: string | ((prev: string | null) => string | null)) => void,
   setMode: (mode: Mode) => void,
   deleteConversation: (e: React.MouseEvent, id: string) => void
 }) => {
@@ -116,7 +121,7 @@ const ConversationItem = React.memo(({
       }}
       className={cn(
         "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
-        activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
+        isActive ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
       tabIndex={0}
@@ -377,17 +382,15 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
+  const deleteConversation = React.useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
       await deleteDoc(doc(db, 'conversations', id));
-      if (activeConversationId === id) {
-        setActiveConversationId(null);
-      }
+      setActiveConversationId(prev => prev === id ? null : prev);
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
-  };
+  }, []);
 
   const clearAllHistory = async () => {
     if (!user) return;
@@ -490,7 +493,7 @@ function AppContent() {
             <ConversationItem
               key={conv.id}
               conv={conv}
-              activeConversationId={activeConversationId}
+              isActive={conv.id === activeConversationId}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
               deleteConversation={deleteConversation}

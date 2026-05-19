@@ -1,0 +1,3 @@
+## 2025-05-14 - Optimized List Rendering and Callback Stability
+**Learning:** Decoupling list items from volatile parent state (like active ID or copied ID) via boolean flags and stabilizing heavy callbacks with refs ensures O(1) rendering during frequent updates. Inline functions in parent components trigger redundant hook re-initializations (like the long-press timer) if the hook doesn't internally use a ref for the callback.
+**Action:** Always flatten list item props to boolean flags and use the Ref-syncing pattern for callbacks that depend on volatile state but need to remain stable references.

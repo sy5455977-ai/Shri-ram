@@ -58,16 +58,12 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Security: Sanitize error to prevent PII (UID/Email) leakage
+  const technicalError = error instanceof Error ? error.message : String(error);
+
+  // Log raw error to console for developers
+  console.error('Firestore Error:', technicalError, { operationType, path });
+
+  // Throw a generic, user-safe error to the UI
+  throw new Error(`Database operation failed: ${operationType} on ${path || 'unknown'}`);
 }

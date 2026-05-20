@@ -58,16 +58,9 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Log the raw technical error for developers (not PII, but detailed context)
+  console.error(`[NEXUS Security] Firestore ${operationType} failed at ${path || 'unknown'}:`, error);
+
+  // Throw a generic, user-safe error message to prevent PII leakage (UID/Email)
+  throw new Error(`System encountered a link failure during ${operationType} operation. Auto-Repair is attempting to stabilize.`);
 }

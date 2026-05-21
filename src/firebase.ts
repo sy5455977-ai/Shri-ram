@@ -58,16 +58,13 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Log technical details to console for debugging, excluding PII
+  console.error('Firestore Error:', {
+    operation: operationType,
+    path,
+    details: error instanceof Error ? error.message : String(error)
+  });
+
+  // Throw generic error to UI to avoid leaking technical details or PII
+  throw new Error(`NEXUS encountered a database error (${operationType}). Stability protocols initiated.`);
 }

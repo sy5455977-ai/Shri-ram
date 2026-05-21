@@ -1,0 +1,3 @@
+## 2025-05-15 - [Prop Flattening and Callback Stabilization in Chat Lists]
+**Learning:** In React, passing non-primitive props like arrays or derived indices (e.g., `index === totalMessages - 1`) to `React.memo` components often defeats the purpose of memoization. Every time the list length changes, every item re-renders. Additionally, callbacks that depend on frequently changing state (like `input` or `messages`) cause children to re-render unless stabilized with `useRef` (the "Ref-syncing" pattern).
+**Action:** Always flatten derived state into boolean props (e.g., `isLast`) and stabilize callbacks using refs when they are passed to a long list of memoized items.

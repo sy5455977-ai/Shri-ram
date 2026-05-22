@@ -1,0 +1,3 @@
+## 2025-05-22 - Accessibility Baseline and Keyboard Discoverability
+**Learning:** Icon-only buttons without labels are invisible to screen readers, and "hover-only" actions (like delete buttons in lists) are unreachable for keyboard users. Applying `focus-visible:opacity-100` alongside `group-hover:opacity-100` is a critical pattern for ensuring functional parity between mouse and keyboard users.
+**Action:** Always pair hover-based visibility with focus-based visibility and ensure every icon-only interactive element has an explicit `aria-label`. Use `aria-pressed` for all toggle-like buttons to communicate state changes to assistive technologies.

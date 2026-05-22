@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ChatInterface from './components/ChatInterface';
@@ -90,13 +90,13 @@ const useLongPress = (callback: () => void, ms = 500) => {
 
 const ConversationItem = React.memo(({ 
   conv, 
-  activeConversationId, 
+  isActive,
   setActiveConversationId, 
   setMode, 
   deleteConversation 
 }: { 
   conv: Conversation, 
-  activeConversationId: string | null, 
+  isActive: boolean,
   setActiveConversationId: (id: string) => void, 
   setMode: (mode: Mode) => void,
   deleteConversation: (e: React.MouseEvent, id: string) => void
@@ -116,7 +116,7 @@ const ConversationItem = React.memo(({
       }}
       className={cn(
         "w-full flex items-center p-3 rounded-xl transition-all group relative cursor-pointer select-none",
-        activeConversationId === conv.id ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
+        isActive ? "bg-white/10 text-white" : "text-nexus-muted hover:bg-white/5 hover:text-white"
       )}
       role="button"
       tabIndex={0}
@@ -176,11 +176,18 @@ function AppContent() {
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
+  const lastRemindersRef = useRef<string | null>(null);
+
   useEffect(() => {
     testConnection();
     const loadReminders = () => {
-      const saved = JSON.parse(localStorage.getItem('nexus_reminders') || '[]');
+      const raw = localStorage.getItem('nexus_reminders') || '[]';
+      // Performance: Skip state update if data hasn't changed
+      if (raw === lastRemindersRef.current) return;
+
+      const saved = JSON.parse(raw);
       setReminders(saved);
+      lastRemindersRef.current = raw;
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
@@ -357,6 +364,10 @@ function AppContent() {
     return () => unsubscribe();
   }, [user]);
 
+  const onConversationCreated = React.useCallback((id: string) => {
+    setActiveConversationId(id);
+  }, []);
+
   const createNewChat = async () => {
     if (!user) {
       await signIn();
@@ -490,7 +501,7 @@ function AppContent() {
             <ConversationItem
               key={conv.id}
               conv={conv}
-              activeConversationId={activeConversationId}
+              isActive={activeConversationId === conv.id}
               setActiveConversationId={setActiveConversationId}
               setMode={setMode}
               deleteConversation={deleteConversation}
@@ -770,7 +781,7 @@ function AppContent() {
               {mode === 'chat' && (
                 <ChatInterface 
                   conversationId={activeConversationId} 
-                  onConversationCreated={(id) => setActiveConversationId(id)}
+                  onConversationCreated={onConversationCreated}
                   performanceMode={performanceMode}
                 />
               )}

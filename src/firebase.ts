@@ -58,16 +58,25 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
+  // Sentinel: Log technical details to console but REMOVE PII (uid/email/IDs) from logs and UI-facing errors
+
+  // Sanitize path to remove potential document IDs which could be UIDs or other sensitive data
+  const sanitizedPath = path ? path.split('/').map((segment, index) => {
+    // Basic heuristic: odd-indexed segments in Firestore paths are usually IDs
+    // e.g. conversations/{id}, users/{id}, conversations/{id}/messages/{id}
+    return index % 2 === 1 ? '[REDACTED_ID]' : segment;
+  }).join('/') : null;
+
+  const technicalErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
     operationType,
-    path
+    path: sanitizedPath,
+    timestamp: new Date().toISOString()
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // Log sanitized error for developers
+  console.error('NEXUS Database Error:', technicalErrorInfo);
+
+  // Throw generic message to UI to prevent PII leakage and provide a better UX
+  throw new Error(`NEXUS encountered a database error (${operationType}). Stability protocols initiated.`);
 }

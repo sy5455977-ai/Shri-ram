@@ -1,0 +1,3 @@
+## 2025-05-22 - [AI Vision Accessibility and Interaction Polishing]
+**Learning:** Icon-only interactive elements in specialized modes (like Vision or Voice) are often overlooked in standard accessibility audits but are critical for screen reader users. Additionally, providing immediate visual feedback for "invisible" actions like 'Copy to Clipboard' significantly improves perceived system responsiveness.
+**Action:** Always include 'aria-label' and 'focus-visible' ring styles for all new interactive elements. Implement a transient state (e.g., Check icon) for copy actions to provide clear user feedback.

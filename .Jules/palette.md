@@ -1,0 +1,3 @@
+## 2025-05-15 - Accessibility pattern for interactive elements in NEXUS AI
+**Learning:** Icon-only buttons in the NEXUS AI project require explicit `aria-label` attributes and standard focus-visible ring indicators (`focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none transition-all`) to ensure they are discoverable and usable by keyboard and screen reader users. Additionally, mode/task switchers should use `role="group"` with an appropriate `aria-label` and `aria-pressed` on buttons to communicate state correctly.
+**Action:** Always apply descriptive `aria-label` and the project-standard focus ring to any new interactive icon buttons, and use ARIA grouping and state attributes for multi-option switchers.

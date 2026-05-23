@@ -178,9 +178,15 @@ function AppContent() {
 
   useEffect(() => {
     testConnection();
+    let lastRemindersJson = '';
     const loadReminders = () => {
-      const saved = JSON.parse(localStorage.getItem('nexus_reminders') || '[]');
+      const raw = localStorage.getItem('nexus_reminders') || '[]';
+      // Optimization: Skip parsing and state update if the data hasn't changed
+      if (raw === lastRemindersJson) return;
+
+      const saved = JSON.parse(raw);
       setReminders(saved);
+      lastRemindersJson = raw;
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);

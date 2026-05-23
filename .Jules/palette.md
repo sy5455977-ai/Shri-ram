@@ -1,0 +1,3 @@
+## 2025-05-14 - Vision Mode Accessibility & Copy Feature
+**Learning:** High-tech interfaces often neglect standard accessibility features like focus rings to maintain a specific "glow" aesthetic. Using `focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none` allows for perfect keyboard navigation support while keeping the UI clean for mouse users. Additionally, providing immediate visual feedback for "Copy" actions (icon swap) significantly reduces user uncertainty in async-heavy AI interfaces.
+**Action:** Always pair `aria-label` with `focus-visible` rings on icon-only buttons to ensure they are both discoverable and navigable for all users.

@@ -58,16 +58,19 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Sanitize path to redact IDs (e.g. coll/ID/subcoll/ID -> coll/[REDACTED_ID]/subcoll/[REDACTED_ID])
+  const sanitizedPath = path
+    ? path.split('/').map((seg, i) => (i % 2 !== 0 ? '[REDACTED_ID]' : seg)).join('/')
+    : null;
+
+  const technicalError = error instanceof Error ? error.message : String(error);
+
+  // Log sanitized technical details for developers - PII and Document IDs are redacted
+  console.error(`[SENTINEL] Firestore Error (${operationType}):`, {
+    error: technicalError,
+    path: sanitizedPath
+  });
+
+  // Throw a generic error to the user to prevent information disclosure or PII leak
+  throw new Error(`NEXUS encountered a database error (${operationType}). Stability protocols initiated.`);
 }

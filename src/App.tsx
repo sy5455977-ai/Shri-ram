@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import ChatInterface from './components/ChatInterface';
-import VoiceMode from './components/VoiceMode';
-import VisionMode from './components/VisionMode';
+// Lazy load components to improve initial load time and reduce main bundle size
+const ChatInterface = React.lazy(() => import('./components/ChatInterface'));
+const VoiceMode = React.lazy(() => import('./components/VoiceMode'));
+const VisionMode = React.lazy(() => import('./components/VisionMode'));
 import Modal from './components/Modal';
 import { cn } from './lib/utils';
 import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError } from './firebase';
@@ -767,15 +768,24 @@ function AppContent() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="h-full"
             >
-              {mode === 'chat' && (
-                <ChatInterface 
-                  conversationId={activeConversationId} 
-                  onConversationCreated={(id) => setActiveConversationId(id)}
-                  performanceMode={performanceMode}
-                />
-              )}
-              {mode === 'voice' && <VoiceMode />}
-              {mode === 'vision' && <VisionMode />}
+              <React.Suspense fallback={
+                <div className="h-full flex items-center justify-center bg-nexus-bg">
+                  <div className="flex flex-col items-center space-y-4 text-center">
+                    <div className="w-12 h-12 rounded-full border-4 border-nexus-primary/20 border-t-nexus-primary animate-spin" />
+                    <p className="text-nexus-primary font-bold text-[10px] uppercase tracking-[0.3em] animate-pulse">Initializing Module...</p>
+                  </div>
+                </div>
+              }>
+                {mode === 'chat' && (
+                  <ChatInterface
+                    conversationId={activeConversationId}
+                    onConversationCreated={(id) => setActiveConversationId(id)}
+                    performanceMode={performanceMode}
+                  />
+                )}
+                {mode === 'voice' && <VoiceMode />}
+                {mode === 'vision' && <VisionMode />}
+              </React.Suspense>
             </motion.div>
           </AnimatePresence>
         </div>

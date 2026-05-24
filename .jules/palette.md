@@ -1,0 +1,3 @@
+## 2025-05-24 - Accessibility and Utility Enhancement in VisionMode
+**Learning:** Icon-only buttons in technical interfaces (like AI Vision) benefit significantly from explicit ARIA labels and persistent focus-visible rings to maintain accessibility without compromising the "high-tech" aesthetic. Adding a "Copy to Clipboard" utility for AI-generated text is a high-impact micro-UX win that users expect in modern AI interfaces.
+**Action:** Always include ARIA labels for icon-only buttons and implement copy-to-clipboard functionality for any significant AI-generated output to improve both accessibility and utility.

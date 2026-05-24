@@ -131,7 +131,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none rounded-lg"
+        aria-label="Delete conversation"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -466,10 +467,20 @@ function AppContent() {
             <input 
               type="text" 
               placeholder="Search chats..." 
+              aria-label="Search conversations"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-10 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-white/10 rounded-md text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -486,6 +497,12 @@ function AppContent() {
               </button>
             )}
           </div>
+          {filteredConversations.length === 0 && searchQuery && (
+            <div className="px-2 py-8 text-center space-y-2">
+              <Search className="w-8 h-8 mx-auto text-nexus-muted/30" />
+              <p className="text-xs text-nexus-muted font-medium">No conversations found</p>
+            </div>
+          )}
           {filteredConversations.map((conv) => (
             <ConversationItem
               key={conv.id}
@@ -512,7 +529,8 @@ function AppContent() {
                   </div>
                   <button 
                     onClick={() => deleteReminder(idx)}
-                    className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                    className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none rounded-lg"
+                    aria-label="Delete reminder"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

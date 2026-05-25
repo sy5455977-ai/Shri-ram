@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import ChatInterface from './components/ChatInterface';
-import VoiceMode from './components/VoiceMode';
-import VisionMode from './components/VisionMode';
 import Modal from './components/Modal';
+
+// Performance: Code-splitting for mode components to reduce initial bundle size
+const ChatInterface = React.lazy(() => import('./components/ChatInterface'));
+const VoiceMode = React.lazy(() => import('./components/VoiceMode'));
+const VisionMode = React.lazy(() => import('./components/VisionMode'));
 import { cn } from './lib/utils';
 import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -178,11 +180,19 @@ function AppContent() {
 
   useEffect(() => {
     testConnection();
+    let lastRemindersJson = localStorage.getItem('nexus_reminders') || '[]';
+
     const loadReminders = () => {
-      const saved = JSON.parse(localStorage.getItem('nexus_reminders') || '[]');
-      setReminders(saved);
+      const currentJson = localStorage.getItem('nexus_reminders') || '[]';
+      // Performance: Skip state update and re-render if the raw JSON string matches
+      // This prevents unnecessary re-renders every 5 seconds when reminders haven't changed.
+      if (currentJson !== lastRemindersJson) {
+        setReminders(JSON.parse(currentJson));
+        lastRemindersJson = currentJson;
+      }
     };
-    loadReminders();
+
+    setReminders(JSON.parse(lastRemindersJson));
     window.addEventListener('storage', loadReminders);
     const interval = setInterval(loadReminders, 5000);
     return () => {
@@ -376,6 +386,11 @@ function AppContent() {
       console.error("Error creating chat:", error);
     }
   };
+
+  // Performance: Stabilize callback to prevent unnecessary re-renders of ChatInterface
+  const handleConversationCreated = React.useCallback((id: string) => {
+    setActiveConversationId(id);
+  }, []);
 
   const deleteConversation = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -758,26 +773,36 @@ function AppContent() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode + (activeConversationId || '')}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="h-full"
-            >
-              {mode === 'chat' && (
-                <ChatInterface 
-                  conversationId={activeConversationId} 
-                  onConversationCreated={(id) => setActiveConversationId(id)}
-                  performanceMode={performanceMode}
-                />
-              )}
-              {mode === 'voice' && <VoiceMode />}
-              {mode === 'vision' && <VisionMode />}
-            </motion.div>
-          </AnimatePresence>
+          <React.Suspense fallback={
+            <div className="h-full flex flex-col items-center justify-center space-y-6">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full border-4 border-nexus-primary/20 border-t-nexus-primary animate-spin" />
+                <Zap className="absolute inset-0 m-auto w-6 h-6 text-nexus-primary animate-pulse" />
+              </div>
+              <p className="text-nexus-primary font-bold text-[10px] uppercase tracking-[0.2em] animate-pulse">Initializing Mode...</p>
+            </div>
+          }>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={mode + (activeConversationId || '')}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="h-full"
+              >
+                {mode === 'chat' && (
+                  <ChatInterface
+                    conversationId={activeConversationId}
+                    onConversationCreated={handleConversationCreated}
+                    performanceMode={performanceMode}
+                  />
+                )}
+                {mode === 'voice' && <VoiceMode />}
+                {mode === 'vision' && <VisionMode />}
+              </motion.div>
+            </AnimatePresence>
+          </React.Suspense>
         </div>
 
         {/* Background Accents */}

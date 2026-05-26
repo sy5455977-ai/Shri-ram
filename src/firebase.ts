@@ -57,17 +57,34 @@ export enum OperationType {
   WRITE = 'write',
 }
 
+/**
+ * Sanitize Firestore paths to prevent Information Disclosure by redacting document IDs.
+ * Redacts odd-indexed segments (e.g., /conversations/[ID]/messages/[ID] -> /conversations/[REDACTED]/messages/[REDACTED])
+ */
+function sanitizePath(path: string | null): string | null {
+  if (!path) return null;
+  return path
+    .split('/')
+    .map((segment, index) => (index % 2 !== 0 ? '[REDACTED_ID]' : segment))
+    .join('/');
+}
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const sanitizedPath = sanitizePath(path);
   const errInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      userId: auth.currentUser?.uid ? '[REDACTED_UID]' : null,
+      email: auth.currentUser?.email ? '[REDACTED_EMAIL]' : null,
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: sanitizedPath,
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // Log technical details to console for developer debugging (still sanitized)
+  console.error(`[Security] NEXUS Database Error (${operationType}):`, JSON.stringify(errInfo));
+
+  // Throw a generic error to the UI to prevent Information Disclosure and PII leakage
+  throw new Error(`NEXUS encountered a database error (${operationType}). Stability protocols initiated.`);
 }

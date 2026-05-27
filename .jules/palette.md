@@ -1,0 +1,3 @@
+## 2025-05-14 - [Vision Mode UX & Accessibility]
+**Learning:** AI Vision results are highly utilitarian (OCR, math, summary); without a quick 'Copy' action, the utility is severely limited for users who need to use that data elsewhere. Localized success feedback (icon transition) is sufficient when a global toast system is not easily accessible from the component. Accessibility in complex "HUD-style" interfaces often lacks basic semantic markers like `role="group"` and `aria-pressed`.
+**Action:** Always include a Copy feature for AI-generated content. Use `aria-pressed` for task/mode switchers and ensure primary actions like camera capture have descriptive `aria-label` and high-visibility focus indicators.

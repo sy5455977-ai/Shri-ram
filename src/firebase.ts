@@ -58,16 +58,32 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
+  // NEXUS Security Optimization: Sanitize path by redacting document IDs to prevent Information Disclosure
+  const sanitizedPath = path
+    ? path.split('/').map((seg, i) => (i % 2 === 1 ? '[REDACTED_ID]' : seg)).join('/')
+    : null;
+
+  const sanitizedErrInfo = {
+    // Redact technical error details and PII from the user-facing message
+    error: 'A database operation failed. Stability protocols initiated.',
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      userId: auth.currentUser ? '[REDACTED_UID]' : null,
+      email: auth.currentUser ? '[REDACTED_EMAIL]' : null,
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: sanitizedPath
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  const technicalContext = {
+    operationType,
+    path: sanitizedPath,
+    message: error instanceof Error ? error.message : 'Unknown database error'
+  };
+
+  // Log sanitized context for debugging without exposing PII or internal IDs in DevTools
+  console.error('NEXUS Database Error:', JSON.stringify(technicalContext));
+
+  // Maintain original JSON structure but with sanitized values to avoid breaking UI consumers
+  throw new Error(JSON.stringify(sanitizedErrInfo));
 }

@@ -461,14 +461,15 @@ function AppContent() {
 
         {/* Search */}
         <div className="px-4 mb-4 shrink-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-muted" />
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-muted group-focus-within:text-nexus-primary transition-colors" />
             <input 
               type="text" 
               placeholder="Search chats..." 
+              aria-label="Search conversations"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none transition-all"
             />
           </div>
         </div>
@@ -496,6 +497,12 @@ function AppContent() {
               deleteConversation={deleteConversation}
             />
           ))}
+
+          {searchQuery && filteredConversations.length === 0 && (
+            <div className="px-2 py-4 text-center text-xs text-nexus-muted italic">
+              No conversations found matching "{searchQuery}"
+            </div>
+          )}
 
           {/* Reminders Section */}
           {reminders.length > 0 && (

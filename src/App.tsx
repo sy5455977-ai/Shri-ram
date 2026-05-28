@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, lazy, Suspense, useRef } from 'react';
+import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import ChatInterface from './components/ChatInterface';
-import VoiceMode from './components/VoiceMode';
-import VisionMode from './components/VisionMode';
 import Modal from './components/Modal';
+
+// NEXUS Performance Optimization: Code-splitting large modules to reduce initial entry bundle
+const ChatInterface = lazy(() => import('./components/ChatInterface'));
+const VoiceMode = lazy(() => import('./components/VoiceMode'));
+const VisionMode = lazy(() => import('./components/VisionMode'));
 import { cn } from './lib/utils';
 import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -176,11 +178,17 @@ function AppContent() {
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
+  // NEXUS Performance Optimization: Using ref to track raw storage string and skip redundant re-renders
+  const lastRemindersRaw = useRef<string | null>(null);
+
   useEffect(() => {
     testConnection();
     const loadReminders = () => {
-      const saved = JSON.parse(localStorage.getItem('nexus_reminders') || '[]');
-      setReminders(saved);
+      const raw = localStorage.getItem('nexus_reminders') || '[]';
+      if (raw !== lastRemindersRaw.current) {
+        lastRemindersRaw.current = raw;
+        setReminders(JSON.parse(raw));
+      }
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
@@ -767,15 +775,22 @@ function AppContent() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="h-full"
             >
-              {mode === 'chat' && (
-                <ChatInterface 
-                  conversationId={activeConversationId} 
-                  onConversationCreated={(id) => setActiveConversationId(id)}
-                  performanceMode={performanceMode}
-                />
-              )}
-              {mode === 'voice' && <VoiceMode />}
-              {mode === 'vision' && <VisionMode />}
+              <Suspense fallback={
+                <div className="h-full flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="w-8 h-8 text-nexus-primary animate-spin" />
+                  <p className="text-xs font-black uppercase tracking-widest text-nexus-muted">System Initializing...</p>
+                </div>
+              }>
+                {mode === 'chat' && (
+                  <ChatInterface
+                    conversationId={activeConversationId}
+                    onConversationCreated={(id) => setActiveConversationId(id)}
+                    performanceMode={performanceMode}
+                  />
+                )}
+                {mode === 'voice' && <VoiceMode />}
+                {mode === 'vision' && <VisionMode />}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </div>

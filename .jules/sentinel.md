@@ -1,0 +1,4 @@
+## 2025-05-15 - PII Redaction in Error Handlers
+**Vulnerability:** Centralized Firestore error handlers were logging and throwing raw PII (User Email, UID) and unsanitized database paths. This data was then being caught by ErrorBoundaries and displayed to the user or exposed in developer consoles.
+**Learning:** Centralized handlers for asynchronous services are common leakage points for sensitive data. Error objects thrown from these handlers must be sanitized at the source, as downstream UI components (like ErrorBoundaries) often render the error message directly.
+**Prevention:** Implement redaction for `auth` properties and path sanitization (e.g., masking every second segment in a REST-style path) within the base error handler utility. Use generic user-facing messages while preserving sanitized metadata for debugging.

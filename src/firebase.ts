@@ -58,16 +58,28 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  // NEXUS Security Optimization: Redact PII and sanitize paths in client logs
+  const sanitizedPath = path
+    ? path.split('/')
+        .map((segment, index) => (index % 2 === 1 ? '[REDACTED_ID]' : segment))
+        .join('/')
+    : null;
+
   const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    // Standard: Use generic error message to avoid leaking internals/stack traces
+    error: `NEXUS encountered a database error (${operationType}). Stability protocols initiated.`,
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      userId: auth.currentUser ? '[REDACTED_UID]' : null,
+      email: auth.currentUser ? '[REDACTED_EMAIL]' : null,
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: sanitizedPath
   };
+
+  // Log only sanitized data to developer console
   console.error('Firestore Error: ', JSON.stringify(errInfo));
+
+  // Throw sanitized JSON for ErrorBoundary parsing while preventing sensitive leakage
   throw new Error(JSON.stringify(errInfo));
 }

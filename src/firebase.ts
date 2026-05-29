@@ -58,16 +58,33 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+  // NEXUS Security Optimization: PII Sanitization
+
+  // Redact document IDs from path (e.g., /coll/[ID]/subcoll/[ID])
+  // Handles leading slashes correctly by filtering empty segments
+  const sanitizePath = (p: string | null) => {
+    if (!p) return null;
+    const segments = p.split('/').filter(Boolean);
+    const sanitized = segments.map((s, i) => i % 2 === 1 ? '[REDACTED_ID]' : s);
+    const joined = sanitized.join('/');
+    return p.startsWith('/') ? `/${joined}` : joined;
+  };
+
+  const sanitizedPath = sanitizePath(path);
+
+  // Log sanitized info for developers without leaking PII in browser logs or screenshots
+  console.error('NEXUS Firestore Error:', {
+    operationType,
+    path: sanitizedPath,
+    auth: {
+      hasUser: !!auth.currentUser,
+      userId: auth.currentUser ? '[REDACTED_UID]' : null,
       emailVerified: auth.currentUser?.emailVerified,
     },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+    originalError: error instanceof Error ? error.message : String(error)
+  });
+
+  // Throw a clean, human-readable error message to the UI.
+  // This avoids the JSON-stringified anti-pattern and prevents PII leakage to the user.
+  throw new Error(`Database error during ${operationType}. Operation could not be completed at this time.`);
 }

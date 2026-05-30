@@ -1,0 +1,3 @@
+## 2025-05-22 - [Accessibility & Feedback Patterns in NEXUS]
+**Learning:** Icon-only buttons (like "Copy" or "Delete") require persistent descriptive `aria-label` attributes. When providing temporary feedback (e.g., "Check" icon after copy), the `aria-label` must also be updated to inform screen reader users of the successful state change. Keyboard navigation should be prioritized by ensuring hidden destructive actions (like delete buttons) become visible on focus using `focus-visible:opacity-100`.
+**Action:** Always apply `aria-label` and `aria-pressed` to interactive elements. Use `focus-visible` ring indicators (standard: `ring-nexus-primary`) and ensure focus triggers visibility for hidden elements.

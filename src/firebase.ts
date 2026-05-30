@@ -58,16 +58,33 @@ export enum OperationType {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path
+  const originalMessage = error instanceof Error ? error.message : String(error);
+
+  // NEXUS Security: Redact PII (emails) and normalize path to redact document IDs
+  const redactPII = (text: string) => text.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]');
+
+  const sanitizePath = (p: string | null) => {
+    if (!p) return 'unknown';
+    const segments = p.split('/').filter(Boolean);
+    // Redact odd-indexed segments (document IDs) in collection/doc/collection/doc pattern
+    return segments.map((s, i) => (i % 2 === 1 ? '[ID]' : s)).join('/');
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  const errInfo = {
+    error: redactPII(originalMessage),
+    operationType,
+    path: sanitizePath(path),
+    authStatus: auth.currentUser ? 'authenticated' : 'unauthenticated'
+  };
+
+  // Log detailed (but sanitized) info for developers to console
+  console.error('NEXUS Security Protocol [Firestore Error]:', {
+    ...errInfo,
+    timestamp: new Date().toISOString(),
+    // Redact UID even in console logs to minimize PII exposure in browser logs
+    sanitizedUid: auth.currentUser?.uid ? `${auth.currentUser.uid.substring(0, 4)}...` : null
+  });
+
+  // Throw a generic message to the UI to prevent leaking internal error details or stack traces
+  throw new Error(`NEXUS encountered a database error (${operationType}). Stability protocols initiated.`);
 }

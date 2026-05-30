@@ -1,0 +1,4 @@
+## 2025-05-15 - PII and Metadata Leakage in Error Handlers
+**Vulnerability:** The centralized error handler was throwing a stringified JSON object containing raw Firestore error messages (potentially containing PII like emails), full internal database paths, and user UIDs, which were then displayed in the UI ErrorBoundary.
+**Learning:** Developers often over-log or over-throw context for debugging purposes, forgetting that client-side errors are user-facing. Stringifying complex objects into Error messages is a common anti-pattern that bypasses simple string sanitization.
+**Prevention:** Centralized error handlers must explicitly redact sensitive patterns (emails, IDs) from logs and throw generic, localized strings to the UI. Use regex-based PII redaction and path normalization before any data leaves the handler.

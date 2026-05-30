@@ -131,7 +131,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        aria-label="Delete conversation"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-1 focus-visible:ring-red-400 outline-none rounded"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -512,7 +513,8 @@ function AppContent() {
                   </div>
                   <button 
                     onClick={() => deleteReminder(idx)}
-                    className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                    aria-label="Delete reminder"
+                    className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-1 focus-visible:ring-red-400 outline-none rounded"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

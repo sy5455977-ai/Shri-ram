@@ -1,0 +1,3 @@
+## 2025-05-30 - Standardizing Vision Mode Accessibility & Utility
+**Learning:** Icon-only buttons (Capture, Reset) require descriptive `aria-label` attributes to be accessible. Toggle groups (Task Switcher) benefit from `role="group"`, descriptive labels, and `aria-pressed` states to communicate context and selection to screen readers. Implementing `focus-visible` rings ensures keyboard discoverability while maintaining visual polish for mouse users.
+**Action:** Always apply `aria-label` to icon-only buttons and use `aria-pressed` for toggle states. Implement `focus-visible:ring-2` (or `ring-4` for large primary actions) as the standard focus indicator.

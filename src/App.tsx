@@ -12,8 +12,8 @@ import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp,
 import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
 // Error Boundary Component
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
-  constructor(props: { children: React.ReactNode }) {
+class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, { hasError: boolean, error: any }> {
+  constructor(props: React.PropsWithChildren<{}>) {
     super(props);
     this.state = { hasError: false, error: null };
   }

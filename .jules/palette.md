@@ -1,0 +1,3 @@
+## 2025-06-01 - [Accessibility & Search UX]
+**Learning:** Destructive actions (like delete buttons) that are hidden by default behind hover states in lists must also be made visible during keyboard navigation using `focus-visible:opacity-100` to ensure keyboard users can discover and interact with them. Additionally, empty search results should provide clear, italicized feedback to confirm the system processed the query but found no matches.
+**Action:** Always pair `group-hover:opacity-100` with `focus-visible:opacity-100` for hidden actions, and implement descriptive empty states for all filtered lists.

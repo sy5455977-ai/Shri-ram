@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ChatInterface from './components/ChatInterface';
@@ -151,7 +151,8 @@ export default function App() {
 
 function AppContent() {
   const [mode, setMode] = useState<Mode>('chat');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  // NEXUS Performance Optimization: Use lazy initializer to avoid redundant window property access on re-renders
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 768);
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -160,27 +161,38 @@ function AppContent() {
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
+  // NEXUS Performance Optimization: Stable dependency on length and functional update to minimize re-renders
   useEffect(() => {
     const checkHealth = () => {
-      if (!navigator.onLine) {
-        setSystemHealth('critical');
-      } else if (conversations.length > 100) {
-        setSystemHealth('degraded');
-      } else {
-        setSystemHealth('stable');
-      }
+      const currentOnline = navigator.onLine;
+      const count = conversations.length;
+
+      setSystemHealth(prev => {
+        let next: 'stable' | 'degraded' | 'critical' = 'stable';
+        if (!currentOnline) next = 'critical';
+        else if (count > 100) next = 'degraded';
+
+        return prev === next ? prev : next;
+      });
     };
     const interval = setInterval(checkHealth, 10000);
     return () => clearInterval(interval);
-  }, [conversations]);
+  }, [conversations.length]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
+  const remindersRawRef = useRef<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     testConnection();
     const loadReminders = () => {
-      const saved = JSON.parse(localStorage.getItem('nexus_reminders') || '[]');
-      setReminders(saved);
+      // NEXUS Performance Optimization: Only update state if localStorage content actually changed
+      // JSON.parse always returns a new reference, so we compare the raw strings
+      const raw = localStorage.getItem('nexus_reminders');
+      if (raw !== remindersRawRef.current) {
+        remindersRawRef.current = raw;
+        const saved = JSON.parse(raw || '[]');
+        setReminders(saved);
+      }
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
@@ -377,7 +389,8 @@ function AppContent() {
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
+  // NEXUS Performance Optimization: Memoize delete callback to prevent ConversationItem re-renders
+  const deleteConversation = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
       await deleteDoc(doc(db, 'conversations', id));
@@ -387,7 +400,7 @@ function AppContent() {
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
-  };
+  }, [activeConversationId]);
 
   const clearAllHistory = async () => {
     if (!user) return;

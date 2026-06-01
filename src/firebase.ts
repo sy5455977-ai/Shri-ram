@@ -57,17 +57,31 @@ export enum OperationType {
   WRITE = 'write',
 }
 
+const redactPII = (text: string) => {
+  return text
+    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]')
+    .replace(/\b[A-Za-z0-9]{20,}\b/g, '[REDACTED_ID]');
+};
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
+  const rawError = error instanceof Error ? error.message : String(error);
+  const sanitizedPath = path ? redactPII(path) : null;
+  const sanitizedError = redactPII(rawError);
+
+  const authInfo = auth.currentUser ? {
+    userId: '[REDACTED_UID]',
+    email: '[REDACTED_EMAIL]',
+    emailVerified: auth.currentUser.emailVerified,
+  } : null;
+
+  const errLog = {
+    error: sanitizedError,
+    authInfo,
     operationType,
-    path
+    path: sanitizedPath
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // NEXUS Sentinel: Log sanitized error to console, keep generic for UI
+  console.error('[NEXUS Sentinel] Firestore Error:', JSON.stringify(errLog));
+  throw new Error(`NEXUS encountered a database error (${operationType}). Stability protocols initiated.`);
 }

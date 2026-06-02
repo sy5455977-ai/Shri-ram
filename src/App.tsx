@@ -159,7 +159,7 @@ function AppContent() {
   const [showClearModal, setShowClearModal] = useState(false);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
-  // System Health Monitor
+  // NEXUS Performance Optimization: Only depend on conversations.length to avoid redundant interval resets when message content changes
   useEffect(() => {
     const checkHealth = () => {
       if (!navigator.onLine) {
@@ -172,7 +172,7 @@ function AppContent() {
     };
     const interval = setInterval(checkHealth, 10000);
     return () => clearInterval(interval);
-  }, [conversations]);
+  }, [conversations.length]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 

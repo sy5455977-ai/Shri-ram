@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Scan, Calculator, FileText, Loader2, X, Sparkles, RefreshCw, Zap } from 'lucide-react';
+import { Camera, Scan, Calculator, FileText, Loader2, X, Sparkles, RefreshCw, Zap, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { analyzeImage } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
@@ -15,6 +15,7 @@ export default function VisionMode() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<VisionTask>('analyze');
+  const [isCopied, setIsCopied] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,10 +66,22 @@ export default function VisionMode() {
     }
   };
 
+  const handleCopy = async () => {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(result);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
   const runAnalysis = async () => {
     if (!capturedImage || isRepairing) return;
     setIsAnalyzing(true);
     setResult(null);
+    setIsCopied(false);
 
     const base64Data = capturedImage.split(',')[1];
     const mimeType = 'image/jpeg';
@@ -104,6 +117,7 @@ export default function VisionMode() {
   const reset = () => {
     setCapturedImage(null);
     setResult(null);
+    setIsCopied(false);
     startCamera();
   };
 
@@ -123,15 +137,20 @@ export default function VisionMode() {
           )}
         </div>
         
-        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+        <div
+          className="flex bg-white/5 p-1 rounded-xl border border-white/10"
+          role="group"
+          aria-label="Vision Task Selection"
+        >
           {(['analyze', 'math', 'ocr', 'summary'] as VisionTask[]).map((task) => (
             <button
               key={task}
               onClick={() => setActiveTask(task)}
               disabled={isRepairing}
+              aria-pressed={activeTask === task}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize",
-                activeTask === task ? "bg-nexus-primary text-nexus-bg" : "text-nexus-muted hover:text-white",
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary",
+                activeTask === task ? "bg-nexus-primary text-nexus-bg shadow-[0_0_10px_rgba(0,242,255,0.3)]" : "text-nexus-muted hover:text-white",
                 isRepairing && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -189,7 +208,8 @@ export default function VisionMode() {
               </div>
               <button
                 onClick={captureImage}
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white flex items-center justify-center hover:scale-110 transition-transform z-30"
+                aria-label="Capture image for analysis"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white flex items-center justify-center hover:scale-110 transition-transform z-30 outline-none focus-visible:ring-4 focus-visible:ring-nexus-primary"
               >
                 <div className="w-16 h-16 rounded-full bg-white" />
               </button>
@@ -200,7 +220,8 @@ export default function VisionMode() {
               <div className="absolute top-4 right-4 flex space-x-2">
                 <button 
                   onClick={reset}
-                  className="p-3 bg-nexus-bg/80 backdrop-blur-md rounded-xl text-white hover:bg-nexus-bg transition-colors"
+                  aria-label="Reset camera and discard image"
+                  className="p-3 bg-nexus-bg/80 backdrop-blur-md rounded-xl text-white hover:bg-nexus-bg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary"
                 >
                   <RefreshCw className="w-6 h-6" />
                 </button>
@@ -208,7 +229,7 @@ export default function VisionMode() {
               {!result && !isAnalyzing && (
                 <button
                   onClick={runAnalysis}
-                  className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 nexus-gradient rounded-2xl text-white font-bold nexus-glow flex items-center space-x-2"
+                  className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 nexus-gradient rounded-2xl text-white font-bold nexus-glow flex items-center space-x-2 outline-none focus-visible:ring-4 focus-visible:ring-white"
                 >
                   <Scan className="w-6 h-6" />
                   <span>Process with NEXUS</span>
@@ -225,12 +246,27 @@ export default function VisionMode() {
               <Sparkles className="w-5 h-5 text-nexus-primary" />
               <span className="font-bold">Analysis Result</span>
             </div>
-            {isAnalyzing && (
-              <div className="flex items-center space-x-2 text-nexus-primary text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>NEXUS is scanning...</span>
-              </div>
-            )}
+            <div className="flex items-center space-x-3">
+              {result && !isAnalyzing && (
+                <button
+                  onClick={handleCopy}
+                  className={cn(
+                    "p-2 rounded-lg transition-all flex items-center space-x-2",
+                    isCopied ? "bg-green-500/10 text-green-500" : "hover:bg-white/10 text-nexus-muted hover:text-white"
+                  )}
+                  aria-label={isCopied ? "Copied to clipboard" : "Copy analysis to clipboard"}
+                  title={isCopied ? "Copied!" : "Copy to Clipboard"}
+                >
+                  {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </button>
+              )}
+              {isAnalyzing && (
+                <div className="flex items-center space-x-2 text-nexus-primary text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>NEXUS is scanning...</span>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto p-6">

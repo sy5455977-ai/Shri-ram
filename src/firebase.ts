@@ -57,17 +57,39 @@ export enum OperationType {
   WRITE = 'write',
 }
 
+/**
+ * Redacts PII (Emails, IDs) from strings for secure logging
+ * NEXUS Sentinel Security Protocol
+ */
+export function redactPII(text: string): string {
+  if (!text) return text;
+  // Redact emails
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  // Redact potential Firebase UIDs/DocIDs (20+ chars)
+  const idRegex = /\b[A-Za-z0-9]{20,}\b/g;
+
+  return text
+    .replace(emailRegex, '[REDACTED_EMAIL]')
+    .replace(idRegex, '[REDACTED_ID]');
+}
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const originalMessage = error instanceof Error ? error.message : String(error);
+
   const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: redactPII(originalMessage),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      userId: auth.currentUser ? '[REDACTED_UID]' : null,
+      email: auth.currentUser ? '[REDACTED_EMAIL]' : null,
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: path ? redactPII(path) : null
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // NEXUS Sentinel: Sanitized logging to prevent PII exposure in browser logs
+  console.error('[NEXUS Sentinel] Firestore Error: ', JSON.stringify(errInfo));
+
+  // Throw generic message to prevent leaking internal metadata or PII to the UI
+  throw new Error(`NEXUS encountered a database error (${operationType}). Stability protocols initiated.`);
 }

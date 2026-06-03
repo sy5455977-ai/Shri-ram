@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ChatInterface from './components/ChatInterface';
@@ -161,6 +161,7 @@ function AppContent() {
 
   // System Health Monitor
   useEffect(() => {
+    // NEXUS Performance Optimization: Only depend on conversations.length to avoid interval resets on message updates
     const checkHealth = () => {
       if (!navigator.onLine) {
         setSystemHealth('critical');
@@ -172,15 +173,21 @@ function AppContent() {
     };
     const interval = setInterval(checkHealth, 10000);
     return () => clearInterval(interval);
-  }, [conversations]);
+  }, [conversations.length]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
+  const remindersRawRef = useRef<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     testConnection();
     const loadReminders = () => {
-      const saved = JSON.parse(localStorage.getItem('nexus_reminders') || '[]');
-      setReminders(saved);
+      // NEXUS Performance Optimization: Avoid JSON.parse and state updates if localStorage hasn't changed
+      const raw = localStorage.getItem('nexus_reminders');
+      if (raw !== remindersRawRef.current) {
+        remindersRawRef.current = raw;
+        const saved = JSON.parse(raw || '[]');
+        setReminders(saved);
+      }
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
@@ -195,7 +202,9 @@ function AppContent() {
     const newReminders = [...reminders];
     newReminders.splice(index, 1);
     setReminders(newReminders);
-    localStorage.setItem('nexus_reminders', JSON.stringify(newReminders));
+    const stringified = JSON.stringify(newReminders);
+    localStorage.setItem('nexus_reminders', stringified);
+    remindersRawRef.current = stringified;
   };
   const [performanceMode, setPerformanceMode] = useState(() => {
     // Auto-detect low-end device or preference

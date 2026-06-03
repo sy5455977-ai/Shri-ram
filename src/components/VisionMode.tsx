@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Scan, Calculator, FileText, Loader2, X, Sparkles, RefreshCw, Zap } from 'lucide-react';
+import { Camera, Scan, Calculator, FileText, Loader2, X, Sparkles, RefreshCw, Zap, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { analyzeImage } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
@@ -14,6 +14,7 @@ export default function VisionMode() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
   const [activeTask, setActiveTask] = useState<VisionTask>('analyze');
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -101,9 +102,17 @@ export default function VisionMode() {
     }
   };
 
+  const handleCopy = () => {
+    if (!result) return;
+    navigator.clipboard.writeText(result);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
   const reset = () => {
     setCapturedImage(null);
     setResult(null);
+    setIsCopied(false);
     startCamera();
   };
 
@@ -123,14 +132,19 @@ export default function VisionMode() {
           )}
         </div>
         
-        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+        <div
+          className="flex bg-white/5 p-1 rounded-xl border border-white/10"
+          role="group"
+          aria-label="Vision Task Selection"
+        >
           {(['analyze', 'math', 'ocr', 'summary'] as VisionTask[]).map((task) => (
             <button
               key={task}
               onClick={() => setActiveTask(task)}
               disabled={isRepairing}
+              aria-pressed={activeTask === task}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize",
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                 activeTask === task ? "bg-nexus-primary text-nexus-bg" : "text-nexus-muted hover:text-white",
                 isRepairing && "opacity-50 cursor-not-allowed"
               )}
@@ -221,9 +235,30 @@ export default function VisionMode() {
 
         <div className="flex flex-col glass rounded-3xl border-2 border-white/10 overflow-hidden">
           <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-nexus-primary" />
-              <span className="font-bold">Analysis Result</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-nexus-primary" />
+                <span className="font-bold">Analysis Result</span>
+              </div>
+              {result && !isAnalyzing && (
+                <button
+                  onClick={handleCopy}
+                  className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all flex items-center space-x-1.5 group/copy focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                  aria-label={isCopied ? "Copied to clipboard" : "Copy analysis result"}
+                >
+                  {isCopied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-green-400" />
+                      <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 group-hover/copy:text-nexus-primary transition-colors" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Copy</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
             {isAnalyzing && (
               <div className="flex items-center space-x-2 text-nexus-primary text-sm">

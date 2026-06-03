@@ -6,7 +6,7 @@ import VoiceMode from './components/VoiceMode';
 import VisionMode from './components/VisionMode';
 import Modal from './components/Modal';
 import { cn } from './lib/utils';
-import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError } from './firebase';
+import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError, redactPII } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, getDocs, getDocFromServer } from 'firebase/firestore';
 import { VoiceProvider, useVoice } from './contexts/VoiceContext';
@@ -38,7 +38,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             NEXUS has encountered a critical system error. The link has been severed to prevent further instability.
           </p>
           <div className="bg-white/5 p-4 rounded-xl text-left font-mono text-xs text-red-400 mb-8 max-w-2xl overflow-auto">
-            {this.state.error?.toString()}
+            {redactPII(this.state.error?.toString() || '')}
           </div>
           <button 
             onClick={() => window.location.reload()}
@@ -285,7 +285,13 @@ function AppContent() {
   // Global Error Handler for Auto-Repair
   useEffect(() => {
     const handleError = (e: ErrorEvent | PromiseRejectionEvent) => {
-      console.error("NEXUS Auto-Repair triggered:", e);
+      // NEXUS Sentinel: Ensure global logs are also sanitized
+      const errorMsg = e instanceof ErrorEvent
+        ? e.message
+        : (e.reason instanceof Error ? e.reason.message : String(e.reason));
+
+      console.error("[NEXUS Sentinel] Auto-Repair triggered:", redactPII(errorMsg));
+
       setSystemStatus(prev => ({ ...prev, repair: 'Repairing...' }));
       showToast("System glitch detected. Auto-repairing...", "error");
       

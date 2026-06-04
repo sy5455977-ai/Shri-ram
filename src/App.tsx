@@ -468,8 +468,18 @@ function AppContent() {
               placeholder="Search chats..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
+              aria-label="Search conversations"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-10 text-sm focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none transition-all"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-white/10 rounded-md text-nexus-muted hover:text-white transition-all"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -496,6 +506,13 @@ function AppContent() {
               deleteConversation={deleteConversation}
             />
           ))}
+
+          {searchQuery && filteredConversations.length === 0 && (
+            <div className="flex flex-col items-center justify-center p-8 text-center space-y-2 opacity-50">
+              <Search className="w-8 h-8 text-nexus-muted" />
+              <p className="text-xs font-bold uppercase tracking-widest text-nexus-muted">No conversations found</p>
+            </div>
+          )}
 
           {/* Reminders Section */}
           {reminders.length > 0 && (

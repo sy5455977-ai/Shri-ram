@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import ChatInterface from './components/ChatInterface';
-import VoiceMode from './components/VoiceMode';
-import VisionMode from './components/VisionMode';
+
+// NEXUS Performance Optimization: Code-splitting main mode components to reduce initial bundle size
+const ChatInterface = React.lazy(() => import('./components/ChatInterface'));
+const VoiceMode = React.lazy(() => import('./components/VoiceMode'));
+const VisionMode = React.lazy(() => import('./components/VisionMode'));
+
 import Modal from './components/Modal';
 import { cn } from './lib/utils';
 import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError } from './firebase';
@@ -174,12 +177,18 @@ function AppContent() {
     return () => clearInterval(interval);
   }, [conversations]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
+  const lastRemindersRef = useRef<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     testConnection();
     const loadReminders = () => {
-      const saved = JSON.parse(localStorage.getItem('nexus_reminders') || '[]');
+      // NEXUS Performance Optimization: Prevent redundant re-renders from localStorage polling
+      const savedRaw = localStorage.getItem('nexus_reminders');
+      if (savedRaw === lastRemindersRef.current) return;
+
+      lastRemindersRef.current = savedRaw;
+      const saved = JSON.parse(savedRaw || '[]');
       setReminders(saved);
     };
     loadReminders();
@@ -767,15 +776,21 @@ function AppContent() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="h-full"
             >
-              {mode === 'chat' && (
-                <ChatInterface 
-                  conversationId={activeConversationId} 
-                  onConversationCreated={(id) => setActiveConversationId(id)}
-                  performanceMode={performanceMode}
-                />
-              )}
-              {mode === 'voice' && <VoiceMode />}
-              {mode === 'vision' && <VisionMode />}
+              <React.Suspense fallback={
+                <div className="h-full flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-nexus-primary" />
+                </div>
+              }>
+                {mode === 'chat' && (
+                  <ChatInterface
+                    conversationId={activeConversationId}
+                    onConversationCreated={(id) => setActiveConversationId(id)}
+                    performanceMode={performanceMode}
+                  />
+                )}
+                {mode === 'voice' && <VoiceMode />}
+                {mode === 'vision' && <VisionMode />}
+              </React.Suspense>
             </motion.div>
           </AnimatePresence>
         </div>

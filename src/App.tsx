@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import ChatInterface from './components/ChatInterface';
-import VoiceMode from './components/VoiceMode';
-import VisionMode from './components/VisionMode';
+const ChatInterface = React.lazy(() => import('./components/ChatInterface'));
+const VoiceMode = React.lazy(() => import('./components/VoiceMode'));
+const VisionMode = React.lazy(() => import('./components/VisionMode'));
 import Modal from './components/Modal';
 import { cn } from './lib/utils';
 import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError } from './firebase';
@@ -758,26 +758,35 @@ function AppContent() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode + (activeConversationId || '')}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="h-full"
-            >
-              {mode === 'chat' && (
-                <ChatInterface 
-                  conversationId={activeConversationId} 
-                  onConversationCreated={(id) => setActiveConversationId(id)}
-                  performanceMode={performanceMode}
-                />
-              )}
-              {mode === 'voice' && <VoiceMode />}
-              {mode === 'vision' && <VisionMode />}
-            </motion.div>
-          </AnimatePresence>
+          <React.Suspense fallback={
+            <div className="h-full flex items-center justify-center">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-12 h-12 rounded-full border-4 border-nexus-primary/20 border-t-nexus-primary animate-spin" />
+                <p className="text-nexus-primary font-black text-[10px] uppercase tracking-[0.3em]">Loading Module...</p>
+              </div>
+            </div>
+          }>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={mode + (activeConversationId || '')}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="h-full"
+              >
+                {mode === 'chat' && (
+                  <ChatInterface
+                    conversationId={activeConversationId}
+                    onConversationCreated={(id) => setActiveConversationId(id)}
+                    performanceMode={performanceMode}
+                  />
+                )}
+                {mode === 'voice' && <VoiceMode />}
+                {mode === 'vision' && <VisionMode />}
+              </motion.div>
+            </AnimatePresence>
+          </React.Suspense>
         </div>
 
         {/* Background Accents */}

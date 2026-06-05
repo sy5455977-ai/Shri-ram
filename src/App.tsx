@@ -131,7 +131,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-1 focus-visible:ring-red-400 outline-none"
+        aria-label="Delete conversation"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -444,7 +445,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -461,15 +466,25 @@ function AppContent() {
 
         {/* Search */}
         <div className="px-4 mb-4 shrink-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-muted" />
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-muted group-focus-within:text-nexus-primary transition-colors" />
             <input 
               type="text" 
+              aria-label="Search conversations"
               placeholder="Search chats..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-10 text-sm focus:ring-2 focus:ring-nexus-primary outline-none transition-all"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                aria-label="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -497,6 +512,16 @@ function AppContent() {
             />
           ))}
 
+          {searchQuery && filteredConversations.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-10 text-center px-4 transition-all duration-300 animate-pulse">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-3">
+                <Search className="w-6 h-6 text-nexus-muted opacity-20" />
+              </div>
+              <p className="text-xs text-nexus-muted font-bold uppercase tracking-widest">No results found</p>
+              <p className="text-[10px] text-nexus-muted/60 mt-1">Try a different search term</p>
+            </div>
+          )}
+
           {/* Reminders Section */}
           {reminders.length > 0 && (
             <div className="mt-6 space-y-2">
@@ -512,7 +537,8 @@ function AppContent() {
                   </div>
                   <button 
                     onClick={() => deleteReminder(idx)}
-                    className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                    className="absolute right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-1 focus-visible:ring-red-400 outline-none"
+                    aria-label="Delete reminder"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -571,7 +597,8 @@ function AppContent() {
                 {systemHealth !== 'stable' && (
                   <button 
                     onClick={() => window.location.reload()}
-                    className="p-1 hover:bg-white/10 rounded text-nexus-primary"
+                    className="p-1 hover:bg-white/10 rounded text-nexus-primary focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                    aria-label="Refresh system"
                     title="Refresh System"
                   >
                     <RefreshCw className="w-3 h-3" />
@@ -619,7 +646,11 @@ function AppContent() {
           <div className="flex items-center space-x-3 md:space-x-4">
             {!isSidebarOpen && (
               <div className="flex items-center space-x-2">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+                  aria-label="Open sidebar"
+                >
                   <Menu className="w-6 h-6" />
                 </button>
                 <button

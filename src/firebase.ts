@@ -57,6 +57,23 @@ export enum OperationType {
   WRITE = 'write',
 }
 
+/**
+ * Redacts PII from a string, specifically emails and potential UIDs/Document IDs.
+ * @param text The text to sanitize.
+ * @returns The sanitized text.
+ */
+export function redactPII(text: string): string {
+  if (!text) return text;
+
+  // Redact emails
+  let sanitized = text.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_REDACTED]');
+
+  // Redact potential UIDs or Document IDs (long alphanumeric strings)
+  sanitized = sanitized.replace(/\b[A-Za-z0-9]{20,}\b/g, '[ID_REDACTED]');
+
+  return sanitized;
+}
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo = {
     error: error instanceof Error ? error.message : String(error),
@@ -66,8 +83,10 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: path ? redactPII(path) : null
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  const sanitizedErrorInfo = redactPII(JSON.stringify(errInfo));
+  console.error('[NEXUS Sentinel] Firestore Error: ', sanitizedErrorInfo);
+  throw new Error(sanitizedErrorInfo);
 }

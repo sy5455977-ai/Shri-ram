@@ -1,0 +1,3 @@
+## 2025-05-15 - [Vision Mode Accessibility and Utility Enhancement]
+**Learning:** Icon-only buttons (like the circular capture button) and mode switchers without explicit labels lack accessibility for screen readers. Additionally, providing a 'Copy' button for AI analysis results significantly improves the micro-UX by reducing the friction of manually selecting and copying text.
+**Action:** Always pair icon-only buttons with descriptive `aria-label` attributes and provide focus-visible ring indicators. Implement localized copy feedback (icon/text change) to provide immediate confirmation of success.

@@ -57,16 +57,28 @@ export enum OperationType {
   WRITE = 'write',
 }
 
+/**
+ * Redacts Personally Identifiable Information (PII) like emails and UIDs from strings.
+ */
+export function redactPII(text: string | null | undefined): string {
+  if (!text) return '';
+
+  // NEXUS Security: Redact emails and long IDs (UIDs, Doc IDs)
+  return text
+    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]')
+    .replace(/\b[A-Za-z0-9]{20,}\b/g, '[REDACTED_ID]');
+}
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: redactPII(error instanceof Error ? error.message : String(error)),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      userId: redactPII(auth.currentUser?.uid),
+      email: redactPII(auth.currentUser?.email),
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: redactPII(path)
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));

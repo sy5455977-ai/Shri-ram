@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Scan, Calculator, FileText, Loader2, X, Sparkles, RefreshCw, Zap } from 'lucide-react';
+import { Camera, Scan, Calculator, FileText, Loader2, X, Sparkles, RefreshCw, Zap, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { analyzeImage } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
@@ -14,6 +14,7 @@ export default function VisionMode() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
   const [activeTask, setActiveTask] = useState<VisionTask>('analyze');
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -104,7 +105,16 @@ export default function VisionMode() {
   const reset = () => {
     setCapturedImage(null);
     setResult(null);
+    setIsCopied(false);
     startCamera();
+  };
+
+  const handleCopy = async () => {
+    if (result) {
+      await navigator.clipboard.writeText(result);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
   };
 
   return (
@@ -129,8 +139,10 @@ export default function VisionMode() {
               key={task}
               onClick={() => setActiveTask(task)}
               disabled={isRepairing}
+              aria-label={`${task} mode`}
+              aria-pressed={activeTask === task}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize",
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary",
                 activeTask === task ? "bg-nexus-primary text-nexus-bg" : "text-nexus-muted hover:text-white",
                 isRepairing && "opacity-50 cursor-not-allowed"
               )}
@@ -189,7 +201,8 @@ export default function VisionMode() {
               </div>
               <button
                 onClick={captureImage}
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white flex items-center justify-center hover:scale-110 transition-transform z-30"
+                aria-label="Capture image"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white flex items-center justify-center hover:scale-110 transition-transform z-30 outline-none focus-visible:ring-4 focus-visible:ring-nexus-primary"
               >
                 <div className="w-16 h-16 rounded-full bg-white" />
               </button>
@@ -200,7 +213,8 @@ export default function VisionMode() {
               <div className="absolute top-4 right-4 flex space-x-2">
                 <button 
                   onClick={reset}
-                  className="p-3 bg-nexus-bg/80 backdrop-blur-md rounded-xl text-white hover:bg-nexus-bg transition-colors"
+                  aria-label="Reset camera"
+                  className="p-3 bg-nexus-bg/80 backdrop-blur-md rounded-xl text-white hover:bg-nexus-bg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary"
                 >
                   <RefreshCw className="w-6 h-6" />
                 </button>
@@ -208,7 +222,7 @@ export default function VisionMode() {
               {!result && !isAnalyzing && (
                 <button
                   onClick={runAnalysis}
-                  className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 nexus-gradient rounded-2xl text-white font-bold nexus-glow flex items-center space-x-2"
+                  className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 nexus-gradient rounded-2xl text-white font-bold nexus-glow flex items-center space-x-2 outline-none focus-visible:ring-4 focus-visible:ring-white"
                 >
                   <Scan className="w-6 h-6" />
                   <span>Process with NEXUS</span>
@@ -221,9 +235,23 @@ export default function VisionMode() {
 
         <div className="flex flex-col glass rounded-3xl border-2 border-white/10 overflow-hidden">
           <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-nexus-primary" />
-              <span className="font-bold">Analysis Result</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-nexus-primary" />
+                <span className="font-bold">Analysis Result</span>
+              </div>
+              {result && !isAnalyzing && (
+                <button
+                  onClick={handleCopy}
+                  aria-label="Copy result"
+                  className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-nexus-primary flex items-center space-x-1"
+                >
+                  {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                  <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:inline">
+                    {isCopied ? "Copied" : "Copy"}
+                  </span>
+                </button>
+              )}
             </div>
             {isAnalyzing && (
               <div className="flex items-center space-x-2 text-nexus-primary text-sm">

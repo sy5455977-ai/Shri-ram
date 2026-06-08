@@ -108,7 +108,7 @@ const MessageItem = React.memo(({
   );
 });
 
-export default function ChatInterface({ conversationId, onConversationCreated, performanceMode }: ChatInterfaceProps) {
+function ChatInterface({ conversationId, onConversationCreated, performanceMode }: ChatInterfaceProps) {
   const { isActive: isVoiceActive, sendTextToVoice } = useVoice();
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageLimit, setMessageLimit] = useState(30);
@@ -123,7 +123,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // NEXUS Performance Optimization: Use 'auto' behavior for faster response when performanceMode is active.
+    messagesEndRef.current?.scrollIntoView({ behavior: performanceMode ? 'auto' : 'smooth' });
   };
 
   useEffect(() => {
@@ -580,6 +581,9 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
     </div>
   );
 }
+
+// NEXUS Performance Optimization: Memoize the entire component to skip re-renders from unrelated App state changes.
+export default React.memo(ChatInterface);
 
 function BotIcon({ className }: { className?: string }) {
   return (

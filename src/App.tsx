@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ChatInterface from './components/ChatInterface';
@@ -160,8 +160,10 @@ function AppContent() {
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
+  // NEXUS Performance Optimization: Using event listeners for connectivity and reactive useEffect for health
+  // eliminates the need for a 10s background interval.
   useEffect(() => {
-    const checkHealth = () => {
+    const updateHealth = () => {
       if (!navigator.onLine) {
         setSystemHealth('critical');
       } else if (conversations.length > 100) {
@@ -170,9 +172,17 @@ function AppContent() {
         setSystemHealth('stable');
       }
     };
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
-  }, [conversations]);
+
+    updateHealth();
+
+    window.addEventListener('online', updateHealth);
+    window.addEventListener('offline', updateHealth);
+
+    return () => {
+      window.removeEventListener('online', updateHealth);
+      window.removeEventListener('offline', updateHealth);
+    };
+  }, [conversations.length]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -184,10 +194,10 @@ function AppContent() {
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
-    const interval = setInterval(loadReminders, 5000);
+    // NEXUS Performance Optimization: Removed 5s polling interval.
+    // Data is already updated via 'storage' events and local state changes.
     return () => {
       window.removeEventListener('storage', loadReminders);
-      clearInterval(interval);
     };
   }, []);
 
@@ -260,13 +270,8 @@ function AppContent() {
   useEffect(() => {
     if (!stabilityMode) return;
 
-    // Simulate automatic system scans
-    const interval = setInterval(() => {
-      console.log("NEXUS Stability Scan: All modules operational.");
-      // In a real app, this could check API health, firebase connection, etc.
-    }, 30000);
-
-    return () => clearInterval(interval);
+    // NEXUS Performance Optimization: Removed 30s stability scan interval to reduce background overhead.
+    console.log("NEXUS Stability Shield: Active");
   }, [stabilityMode]);
 
   // System Doctor Logic
@@ -357,7 +362,7 @@ function AppContent() {
     return () => unsubscribe();
   }, [user]);
 
-  const createNewChat = async () => {
+  const createNewChat = useCallback(async () => {
     if (!user) {
       await signIn();
       return;
@@ -375,9 +380,10 @@ function AppContent() {
     } catch (error) {
       console.error("Error creating chat:", error);
     }
-  };
+  }, [user]);
 
-  const deleteConversation = async (e: React.MouseEvent, id: string) => {
+  // NEXUS Performance Optimization: Memoized delete handler to prevent ConversationItem re-renders.
+  const deleteConversation = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
       await deleteDoc(doc(db, 'conversations', id));
@@ -387,7 +393,7 @@ function AppContent() {
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
-  };
+  }, [activeConversationId]);
 
   const clearAllHistory = async () => {
     if (!user) return;

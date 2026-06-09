@@ -158,24 +158,35 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
-
-  // System Health Monitor
-  useEffect(() => {
-    const checkHealth = () => {
-      if (!navigator.onLine) {
-        setSystemHealth('critical');
-      } else if (conversations.length > 100) {
-        setSystemHealth('degraded');
-      } else {
-        setSystemHealth('stable');
-      }
-    };
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
-  }, [conversations]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [performanceMode, setPerformanceMode] = useState(() => {
+    // Auto-detect low-end device or preference
+    const saved = localStorage.getItem('performanceMode');
+    if (saved !== null) return saved === 'true';
+    return false;
+  });
+  const [stabilityMode, setStabilityMode] = useState(true);
+  const [systemStatus, setSystemStatus] = useState({
+    ai: 'Active',
+    voice: 'Optimized',
+    chat: 'Stable',
+    repair: 'Active',
+    network: 'Online'
+  });
 
+  // NEXUS Performance Optimization: Replaced 10s polling with event-driven health monitoring
+  useEffect(() => {
+    if (systemStatus.network === 'Offline') {
+      setSystemHealth('critical');
+    } else if (conversations.length > 100) {
+      setSystemHealth('degraded');
+    } else {
+      setSystemHealth('stable');
+    }
+  }, [conversations.length, systemStatus.network]);
+
+  // NEXUS Performance Optimization: Removed 5s polling for reminders; relying on storage events
   useEffect(() => {
     testConnection();
     const loadReminders = () => {
@@ -184,10 +195,8 @@ function AppContent() {
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
-    const interval = setInterval(loadReminders, 5000);
     return () => {
       window.removeEventListener('storage', loadReminders);
-      clearInterval(interval);
     };
   }, []);
 
@@ -197,12 +206,6 @@ function AppContent() {
     setReminders(newReminders);
     localStorage.setItem('nexus_reminders', JSON.stringify(newReminders));
   };
-  const [performanceMode, setPerformanceMode] = useState(() => {
-    // Auto-detect low-end device or preference
-    const saved = localStorage.getItem('performanceMode');
-    if (saved !== null) return saved === 'true';
-    return false;
-  });
 
   useEffect(() => {
     localStorage.setItem('performanceMode', performanceMode ? 'true' : 'false');
@@ -233,14 +236,6 @@ function AppContent() {
       setDeferredPrompt(null);
     }
   };
-  const [stabilityMode, setStabilityMode] = useState(true);
-  const [systemStatus, setSystemStatus] = useState({
-    ai: 'Active',
-    voice: 'Optimized',
-    chat: 'Stable',
-    repair: 'Active',
-    network: 'Online'
-  });
 
   useEffect(() => {
     const handleOnline = () => setSystemStatus(prev => ({ ...prev, network: 'Online' }));
@@ -257,16 +252,10 @@ function AppContent() {
 
   const { isActive: isVoiceActive, status: voiceStatus, stopSession: stopVoice, isRepairing } = useVoice();
 
+  // NEXUS Performance Optimization: Removed 30s stability scan polling to reduce background overhead
   useEffect(() => {
     if (!stabilityMode) return;
-
-    // Simulate automatic system scans
-    const interval = setInterval(() => {
-      console.log("NEXUS Stability Scan: All modules operational.");
-      // In a real app, this could check API health, firebase connection, etc.
-    }, 30000);
-
-    return () => clearInterval(interval);
+    console.log("NEXUS Stability Monitor: Active");
   }, [stabilityMode]);
 
   // System Doctor Logic

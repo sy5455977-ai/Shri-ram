@@ -18,6 +18,7 @@ import {
   limit
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { redactPII } from './lib/utils';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -68,6 +69,10 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // Redact PII from the error info before logging or throwing
+  const sanitizedErrorInfo = redactPII(JSON.stringify(errInfo));
+
+  console.error('Firestore Error: ', sanitizedErrorInfo);
+  throw new Error(sanitizedErrorInfo);
 }

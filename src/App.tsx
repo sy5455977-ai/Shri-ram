@@ -1,28 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, Component, ReactNode, ErrorInfo, lazy, Suspense } from 'react';
+import { MessageSquare, Mic, Camera, Settings, Shield, Zap, Info, Menu, X, Plus, Search, Trash2, LogIn, LogOut, User as UserIcon, RefreshCw, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ChatInterface from './components/ChatInterface';
-import VoiceMode from './components/VoiceMode';
-import VisionMode from './components/VisionMode';
 import Modal from './components/Modal';
+
+// Lazy load secondary modes to reduce initial bundle size
+const VoiceMode = lazy(() => import('./components/VoiceMode'));
+const VisionMode = lazy(() => import('./components/VisionMode'));
 import { cn } from './lib/utils';
 import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, getDocs, getDocFromServer } from 'firebase/firestore';
 import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
 // Error Boundary Component
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
-  constructor(props: { children: React.ReactNode }) {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: any) {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
@@ -767,15 +778,25 @@ function AppContent() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="h-full"
             >
-              {mode === 'chat' && (
-                <ChatInterface 
-                  conversationId={activeConversationId} 
-                  onConversationCreated={(id) => setActiveConversationId(id)}
-                  performanceMode={performanceMode}
-                />
-              )}
-              {mode === 'voice' && <VoiceMode />}
-              {mode === 'vision' && <VisionMode />}
+              <Suspense fallback={
+                <div className="h-full flex flex-col items-center justify-center space-y-4">
+                  <div className="relative">
+                    <Loader2 className="w-12 h-12 animate-spin text-nexus-primary" />
+                    <div className="absolute inset-0 blur-lg bg-nexus-primary/20 animate-pulse" />
+                  </div>
+                  <p className="text-nexus-primary font-bold text-[10px] uppercase tracking-[0.2em]">Loading Module...</p>
+                </div>
+              }>
+                {mode === 'chat' && (
+                  <ChatInterface
+                    conversationId={activeConversationId}
+                    onConversationCreated={(id) => setActiveConversationId(id)}
+                    performanceMode={performanceMode}
+                  />
+                )}
+                {mode === 'voice' && <VoiceMode />}
+                {mode === 'vision' && <VisionMode />}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </div>

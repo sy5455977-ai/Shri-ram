@@ -18,6 +18,7 @@ import {
   limit
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { redactPII } from './lib/utils';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -59,15 +60,16 @@ export enum OperationType {
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: error instanceof Error ? redactPII(error.message) : redactPII(String(error)),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      userId: auth.currentUser?.uid ? "[REDACTED_ID]" : undefined,
+      email: auth.currentUser?.email ? "[REDACTED_EMAIL]" : undefined,
       emailVerified: auth.currentUser?.emailVerified,
     },
     operationType,
-    path
+    path: path ? redactPII(path) : null
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  const sanitizedMsg = JSON.stringify(errInfo);
+  console.error('Firestore Error: ', sanitizedMsg);
+  throw new Error(sanitizedMsg);
 }

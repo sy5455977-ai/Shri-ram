@@ -151,7 +151,7 @@ export default function App() {
 
 function AppContent() {
   const [mode, setMode] = useState<Mode>('chat');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 768);
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -170,9 +170,16 @@ function AppContent() {
         setSystemHealth('stable');
       }
     };
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
-  }, [conversations]);
+
+    checkHealth();
+    window.addEventListener('online', checkHealth);
+    window.addEventListener('offline', checkHealth);
+
+    return () => {
+      window.removeEventListener('online', checkHealth);
+      window.removeEventListener('offline', checkHealth);
+    };
+  }, [conversations.length]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -184,10 +191,8 @@ function AppContent() {
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
-    const interval = setInterval(loadReminders, 5000);
     return () => {
       window.removeEventListener('storage', loadReminders);
-      clearInterval(interval);
     };
   }, []);
 

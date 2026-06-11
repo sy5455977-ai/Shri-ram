@@ -79,19 +79,21 @@ const MessageItem = React.memo(({
         </div>
         
         {message.role === 'assistant' && (
-          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-2 pt-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
             <button 
               onClick={() => handleCopy(message.content, message.id)}
-              className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+              className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
               title="Copy"
+              aria-label="Copy message"
             >
               {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
             {index === totalMessages - 1 && (
               <button 
                 onClick={handleRegenerate}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                 title="Regenerate"
+                aria-label="Regenerate response"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>

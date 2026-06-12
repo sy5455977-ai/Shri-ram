@@ -159,7 +159,7 @@ function AppContent() {
   const [showClearModal, setShowClearModal] = useState(false);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
-  // System Health Monitor
+  // System Health Monitor - Event Driven (Performance Optimized)
   useEffect(() => {
     const checkHealth = () => {
       if (!navigator.onLine) {
@@ -170,8 +170,16 @@ function AppContent() {
         setSystemHealth('stable');
       }
     };
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
+
+    // Call immediately and set up event listeners instead of polling
+    checkHealth();
+    window.addEventListener('online', checkHealth);
+    window.addEventListener('offline', checkHealth);
+
+    return () => {
+      window.removeEventListener('online', checkHealth);
+      window.removeEventListener('offline', checkHealth);
+    };
   }, [conversations]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -183,11 +191,10 @@ function AppContent() {
       setReminders(saved);
     };
     loadReminders();
+    // Synchronization via storage event is enough; removing 5s polling interval
     window.addEventListener('storage', loadReminders);
-    const interval = setInterval(loadReminders, 5000);
     return () => {
       window.removeEventListener('storage', loadReminders);
-      clearInterval(interval);
     };
   }, []);
 

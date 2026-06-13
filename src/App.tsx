@@ -151,7 +151,8 @@ export default function App() {
 
 function AppContent() {
   const [mode, setMode] = useState<Mode>('chat');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  // Bolt: Use lazy initialization to avoid window access on every render
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 768);
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -160,6 +161,7 @@ function AppContent() {
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
   // System Health Monitor
+  // Bolt: Replaced setInterval with event-driven updates and reactive effect
   useEffect(() => {
     const checkHealth = () => {
       if (!navigator.onLine) {
@@ -170,9 +172,17 @@ function AppContent() {
         setSystemHealth('stable');
       }
     };
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
-  }, [conversations]);
+
+    checkHealth(); // Initial check
+
+    window.addEventListener('online', checkHealth);
+    window.addEventListener('offline', checkHealth);
+
+    return () => {
+      window.removeEventListener('online', checkHealth);
+      window.removeEventListener('offline', checkHealth);
+    };
+  }, [conversations.length]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -183,11 +193,10 @@ function AppContent() {
       setReminders(saved);
     };
     loadReminders();
+    // Bolt: Removed 5s interval as storage event handles cross-tab sync
     window.addEventListener('storage', loadReminders);
-    const interval = setInterval(loadReminders, 5000);
     return () => {
       window.removeEventListener('storage', loadReminders);
-      clearInterval(interval);
     };
   }, []);
 
@@ -259,14 +268,7 @@ function AppContent() {
 
   useEffect(() => {
     if (!stabilityMode) return;
-
-    // Simulate automatic system scans
-    const interval = setInterval(() => {
-      console.log("NEXUS Stability Scan: All modules operational.");
-      // In a real app, this could check API health, firebase connection, etc.
-    }, 30000);
-
-    return () => clearInterval(interval);
+    // Bolt: Removed redundant 30s stability scan interval that only logs to console
   }, [stabilityMode]);
 
   // System Doctor Logic

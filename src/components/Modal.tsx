@@ -40,6 +40,10 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="relative w-full max-w-md bg-nexus-bg border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            aria-describedby="modal-description"
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -52,24 +56,25 @@ export default function Modal({
                   )}>
                     <AlertTriangle className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">{title}</h3>
+                  <h3 id="modal-title" className="text-xl font-bold text-white">{title}</h3>
                 </div>
                 <button 
                   onClick={onClose}
-                  className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-colors"
+                  aria-label="Close modal"
+                  className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               
-              <p className="text-nexus-muted leading-relaxed mb-8">
+              <p id="modal-description" className="text-nexus-muted leading-relaxed mb-8">
                 {message}
               </p>
               
               <div className="flex items-center space-x-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all"
+                  className="flex-1 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                 >
                   {cancelText}
                 </button>
@@ -79,7 +84,7 @@ export default function Modal({
                     onClose();
                   }}
                   className={cn(
-                    "flex-1 px-6 py-3 rounded-2xl font-bold transition-all nexus-glow",
+                    "flex-1 px-6 py-3 rounded-2xl font-bold transition-all nexus-glow focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none",
                     type === 'danger' ? "bg-red-500 hover:bg-red-600 text-white" :
                     "nexus-gradient text-white"
                   )}

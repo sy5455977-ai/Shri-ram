@@ -132,6 +132,7 @@ const ConversationItem = React.memo(({
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
         className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        aria-label="Delete conversation"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -444,7 +445,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+            aria-label="Close sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -468,8 +473,18 @@ function AppContent() {
               placeholder="Search chats..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-10 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"
+              aria-label="Search chats"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full text-nexus-muted hover:text-white transition-all"
+                aria-label="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -486,6 +501,13 @@ function AppContent() {
               </button>
             )}
           </div>
+          {searchQuery && filteredConversations.length === 0 && (
+            <div className="px-2 py-4 text-center">
+              <p className="text-xs text-nexus-muted italic">
+                No chats found matching "{searchQuery}"
+              </p>
+            </div>
+          )}
           {filteredConversations.map((conv) => (
             <ConversationItem
               key={conv.id}

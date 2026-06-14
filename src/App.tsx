@@ -159,7 +159,7 @@ function AppContent() {
   const [showClearModal, setShowClearModal] = useState(false);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
-  // System Health Monitor
+  // System Health Monitor - Event-driven for better performance
   useEffect(() => {
     const checkHealth = () => {
       if (!navigator.onLine) {
@@ -170,9 +170,16 @@ function AppContent() {
         setSystemHealth('stable');
       }
     };
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
-  }, [conversations]);
+
+    checkHealth();
+    window.addEventListener('online', checkHealth);
+    window.addEventListener('offline', checkHealth);
+
+    return () => {
+      window.removeEventListener('online', checkHealth);
+      window.removeEventListener('offline', checkHealth);
+    };
+  }, [conversations.length]); // Only re-run if conversation count crosses threshold
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -184,10 +191,8 @@ function AppContent() {
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
-    const interval = setInterval(loadReminders, 5000);
     return () => {
       window.removeEventListener('storage', loadReminders);
-      clearInterval(interval);
     };
   }, []);
 
@@ -259,14 +264,7 @@ function AppContent() {
 
   useEffect(() => {
     if (!stabilityMode) return;
-
-    // Simulate automatic system scans
-    const interval = setInterval(() => {
-      console.log("NEXUS Stability Scan: All modules operational.");
-      // In a real app, this could check API health, firebase connection, etc.
-    }, 30000);
-
-    return () => clearInterval(interval);
+    // Removed redundant console polling interval for better background performance
   }, [stabilityMode]);
 
   // System Doctor Logic

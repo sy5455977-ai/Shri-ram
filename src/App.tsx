@@ -151,7 +151,7 @@ export default function App() {
 
 function AppContent() {
   const [mode, setMode] = useState<Mode>('chat');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 768);
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -159,20 +159,32 @@ function AppContent() {
   const [showClearModal, setShowClearModal] = useState(false);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
-  // System Health Monitor
+  // System Health Monitor - Optimized to be reactive instead of polling
   useEffect(() => {
     const checkHealth = () => {
-      if (!navigator.onLine) {
-        setSystemHealth('critical');
-      } else if (conversations.length > 100) {
-        setSystemHealth('degraded');
-      } else {
-        setSystemHealth('stable');
-      }
+      setSystemHealth(prev => {
+        if (!navigator.onLine) return 'critical';
+        if (conversations.length > 100) return 'degraded';
+        return 'stable';
+      });
     };
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
-  }, [conversations]);
+
+    checkHealth();
+    window.addEventListener('online', checkHealth);
+    window.addEventListener('offline', checkHealth);
+
+    return () => {
+      window.removeEventListener('online', checkHealth);
+      window.removeEventListener('offline', checkHealth);
+    };
+  }, []); // Static listeners
+
+  // Update health when conversation count crosses thresholds
+  useEffect(() => {
+    if (navigator.onLine) {
+      setSystemHealth(conversations.length > 100 ? 'degraded' : 'stable');
+    }
+  }, [conversations.length]);
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -184,10 +196,10 @@ function AppContent() {
     };
     loadReminders();
     window.addEventListener('storage', loadReminders);
-    const interval = setInterval(loadReminders, 5000);
+    // Optimized: Removed 5s polling interval as storage listener handles cross-tab updates
+    // and local updates are handled via direct state calls.
     return () => {
       window.removeEventListener('storage', loadReminders);
-      clearInterval(interval);
     };
   }, []);
 
@@ -260,13 +272,9 @@ function AppContent() {
   useEffect(() => {
     if (!stabilityMode) return;
 
-    // Simulate automatic system scans
-    const interval = setInterval(() => {
-      console.log("NEXUS Stability Scan: All modules operational.");
-      // In a real app, this could check API health, firebase connection, etc.
-    }, 30000);
-
-    return () => clearInterval(interval);
+    // Optimized: Removed 30s stability scan interval to reduce idle CPU wake-ups.
+    // In a production app, this should be replaced with proactive health checks on failure.
+    console.log("NEXUS Stability: Active monitoring via event-driven hooks.");
   }, [stabilityMode]);
 
   // System Doctor Logic

@@ -131,7 +131,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        aria-label={`Delete conversation: ${conv.title}`}
+        className="absolute right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all focus-visible:ring-2 focus-visible:ring-red-500 rounded-lg outline-none"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -444,7 +445,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close sidebar"
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>

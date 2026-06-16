@@ -56,7 +56,8 @@ export default function Modal({
                 </div>
                 <button 
                   onClick={onClose}
-                  className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-colors"
+                  aria-label="Close modal"
+                  className="p-2 hover:bg-white/5 rounded-full text-nexus-muted hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-nexus-primary outline-none"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -69,7 +70,7 @@ export default function Modal({
               <div className="flex items-center space-x-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all"
+                  className="flex-1 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all focus-visible:ring-2 focus-visible:ring-white/20 outline-none"
                 >
                   {cancelText}
                 </button>
@@ -79,9 +80,9 @@ export default function Modal({
                     onClose();
                   }}
                   className={cn(
-                    "flex-1 px-6 py-3 rounded-2xl font-bold transition-all nexus-glow",
-                    type === 'danger' ? "bg-red-500 hover:bg-red-600 text-white" :
-                    "nexus-gradient text-white"
+                    "flex-1 px-6 py-3 rounded-2xl font-bold transition-all nexus-glow focus-visible:ring-2 outline-none",
+                    type === 'danger' ? "bg-red-500 hover:bg-red-600 text-white focus-visible:ring-red-400" :
+                    "nexus-gradient text-white focus-visible:ring-nexus-primary"
                   )}
                 >
                   {confirmText}

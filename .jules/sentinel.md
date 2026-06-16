@@ -1,0 +1,4 @@
+## 2025-03-04 - Centralized PII Redaction in Error Handling
+**Vulnerability:** Standard error handling (e.g., stringifying Error objects or logging them directly) can leak PII such as emails and UIDs if the source data or authentication context is included in the error message or its metadata.
+**Learning:** In a Firebase-based application, error handlers often include `auth.currentUser` details for debugging. Centralized redaction in core error utilities (like `handleFirestoreError`) and global listeners (like `ErrorBoundary` or `window.onerror`) provides essential defense-in-depth by sanitizing these messages before they are persisted or displayed.
+**Prevention:** Implement a utility to redact common PII patterns (emails, long alphanumeric IDs) and apply it to all error handling paths that might log, store, or display error information.

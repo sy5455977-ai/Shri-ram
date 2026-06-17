@@ -518,6 +518,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
               onClick={() => fileInputRef.current?.click()}
               className="p-3 rounded-xl hover:bg-white/10 text-nexus-muted hover:text-nexus-primary transition-all"
               title="Attach Image"
+              aria-label="Attach image"
             >
               <Paperclip className="w-5 h-5" />
             </button>
@@ -528,6 +529,8 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
                 deepReasoning ? "bg-nexus-primary/20 text-nexus-primary" : "text-nexus-muted hover:text-white"
               )}
               title="Deep Reasoning Mode"
+              aria-label="Deep reasoning mode"
+              aria-pressed={deepReasoning}
             >
               <Brain className="w-5 h-5" />
             </button>
@@ -546,6 +549,7 @@ export default function ChatInterface({ conversationId, onConversationCreated, p
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder={deepReasoning ? "Ask a complex question..." : "Ask NEXUS anything..."}
+            aria-label="Message input"
             className="flex-1 bg-transparent border-none focus:ring-0 text-nexus-text placeholder:text-nexus-muted px-2"
           />
           <button

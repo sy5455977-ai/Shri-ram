@@ -131,7 +131,8 @@ const ConversationItem = React.memo(({
       <span className="ml-3 text-sm truncate pr-6">{conv.title}</span>
       <button 
         onClick={(e) => deleteConversation(e, conv.id)}
-        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+        aria-label={`Delete "${conv.title}" conversation`}
+        className="absolute right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1 hover:text-red-400 transition-all"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -444,7 +445,11 @@ function AppContent() {
             </div>
             <span className="text-xl font-black tracking-tighter">NEXUS AI</span>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close sidebar"
+            className="p-2 hover:bg-white/5 rounded-lg text-nexus-muted"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -466,6 +471,7 @@ function AppContent() {
             <input 
               type="text" 
               placeholder="Search chats..." 
+              aria-label="Search conversations"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-nexus-primary outline-none"

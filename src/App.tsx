@@ -5,7 +5,7 @@ import ChatInterface from './components/ChatInterface';
 import VoiceMode from './components/VoiceMode';
 import VisionMode from './components/VisionMode';
 import Modal from './components/Modal';
-import { cn } from './lib/utils';
+import { cn, redactPII } from './lib/utils';
 import { auth, db, signIn, logOut, Conversation, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, getDocs, getDocFromServer } from 'firebase/firestore';
@@ -28,6 +28,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
   render() {
     if (this.state.hasError) {
+      const redactedErrorMessage = redactPII(this.state.error?.toString() || "");
       return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-8 text-center">
           <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
@@ -38,7 +39,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             NEXUS has encountered a critical system error. The link has been severed to prevent further instability.
           </p>
           <div className="bg-white/5 p-4 rounded-xl text-left font-mono text-xs text-red-400 mb-8 max-w-2xl overflow-auto">
-            {this.state.error?.toString()}
+            {redactedErrorMessage}
           </div>
           <button 
             onClick={() => window.location.reload()}
@@ -297,11 +298,12 @@ function AppContent() {
         
         // If it's a critical error, we might need to refresh or re-initialize
         if (e instanceof ErrorEvent && (e.message.includes('critical') || e.message.includes('Script error'))) {
+        const redactedMsg = redactPII(e.message);
           // Clear local storage if it's a persistent error
-          if (localStorage.getItem('lastError') === e.message) {
+        if (localStorage.getItem('lastError') === redactedMsg) {
             localStorage.clear();
           }
-          localStorage.setItem('lastError', e.message);
+        localStorage.setItem('lastError', redactedMsg);
           window.location.reload();
         }
       }, 3000);

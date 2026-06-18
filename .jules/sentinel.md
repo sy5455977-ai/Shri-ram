@@ -1,0 +1,4 @@
+## 2025-05-14 - PII Leakage in Error Reporting
+**Vulnerability:** Personal Identifiable Information (PII) such as user emails and UIDs were being logged to the console and persisted in `localStorage` via error handlers and the `ErrorBoundary`. Specifically, `handleFirestoreError` was stringifying the full `auth.currentUser` object into error messages.
+**Learning:** Standard error handling that stringifies entire context objects or raw error messages from external services (like Firebase) can inadvertently expose sensitive user data in client-side logs or persistent storage, which may be accessible to other scripts or during physical access.
+**Prevention:** Implement centralized PII redaction for all user-facing or logged error messages. Ensure that context objects used for debugging are explicitly masked (e.g., replacing emails/UIDs with tokens) before being serialized or displayed.

@@ -159,7 +159,7 @@ function AppContent() {
   const [showClearModal, setShowClearModal] = useState(false);
   const [systemHealth, setSystemHealth] = useState<'stable' | 'degraded' | 'critical'>('stable');
 
-  // System Health Monitor
+  // System Health Monitor - Event-driven and Reactive
   useEffect(() => {
     const checkHealth = () => {
       if (!navigator.onLine) {
@@ -170,9 +170,18 @@ function AppContent() {
         setSystemHealth('stable');
       }
     };
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
-  }, [conversations]);
+
+    checkHealth();
+
+    window.addEventListener('online', checkHealth);
+    window.addEventListener('offline', checkHealth);
+
+    return () => {
+      window.removeEventListener('online', checkHealth);
+      window.removeEventListener('offline', checkHealth);
+    };
+  }, [conversations.length]);
+
   const [reminders, setReminders] = useState<{ task: string, time: string, createdAt: string }[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -183,11 +192,10 @@ function AppContent() {
       setReminders(saved);
     };
     loadReminders();
+    // Use storage listener for cross-tab updates; removed 5s polling
     window.addEventListener('storage', loadReminders);
-    const interval = setInterval(loadReminders, 5000);
     return () => {
       window.removeEventListener('storage', loadReminders);
-      clearInterval(interval);
     };
   }, []);
 
@@ -257,17 +265,7 @@ function AppContent() {
 
   const { isActive: isVoiceActive, status: voiceStatus, stopSession: stopVoice, isRepairing } = useVoice();
 
-  useEffect(() => {
-    if (!stabilityMode) return;
-
-    // Simulate automatic system scans
-    const interval = setInterval(() => {
-      console.log("NEXUS Stability Scan: All modules operational.");
-      // In a real app, this could check API health, firebase connection, etc.
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [stabilityMode]);
+  // Performance Optimization: Removed 30s stability scan interval as it was purely for logging.
 
   // System Doctor Logic
   useEffect(() => {
